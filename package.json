@@ -1,0 +1,45 @@
+{
+  "name": "monowave-player",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "check": "tsc --noEmit",
+    "prebuild:android": "expo prebuild --platform android --no-install",
+    "check:dependencies": "expo install --check",
+    "check:native": "expo-modules-autolinking resolve --platform android",
+    "export:android": "expo export --platform android",
+    "build:apk": "npx eas-cli@latest build --platform android --profile preview",
+    "build:development": "npx eas-cli@latest build --platform android --profile development",
+    "build:aab": "npx eas-cli@latest build --platform android --profile production"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "57.0.24",
+    "expo-audio": "57.0.5",
+    "expo-dev-client": "57.0.19",
+    "expo-modules-core": "57.0.18",
+    "expo-status-bar": "57.0.1",
+    "expo-system-ui": "57.0.4",
+    "phosphor-react-native": "^3.0.6",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-svg": "^15.15.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
+  }
+}

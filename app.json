@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Monowave",
+    "slug": "monowave-player",
+    "version": "0.1.0",
+    "scheme": "monowave",
+    "platforms": [
+      "android"
+    ],
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#080812",
+    "android": {
+      "versionCode": 1,
+      "package": "com.example.monowaveplayer",
+      "permissions": [
+        "INTERNET",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true,
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withJitPack",
+      "./plugins/withDesugaring"
+    ]
+  }
+}
