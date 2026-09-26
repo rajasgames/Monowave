@@ -6,10 +6,13 @@ import type { Candidate } from "../../../../src/services/recommendations/types";
 
 describe("diversity", () => {
   const makeCandidate = (id: string, artistKey: string, score: number = 10, exploration: boolean = false): Candidate => ({
-    track: { id, title: `Title ${id}`, artist: artistKey },
+    track: { id, title: `Title ${id}`, artist: artistKey } as any,
     artistKey,
     score,
     exploration,
+    source: 'artist',
+    sourceLabel: 'Test',
+    seedRank: 0,
   });
 
   describe("interleavePools", () => {
