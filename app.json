@@ -4,9 +4,7 @@
     "slug": "monowave-player",
     "version": "1.0.0",
     "scheme": "monowave",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
@@ -34,7 +32,7 @@
           "recordAudioAndroid": false
         }
       ],
-      "./plugins/withJitPack",
+      "./plugins/withSplitApks", "./plugins/withJitPack",
       "./plugins/withDesugaring",
       "expo-asset"
     ]

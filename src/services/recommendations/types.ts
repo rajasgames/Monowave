@@ -1,7 +1,7 @@
-import type { Track } from '../../music';
+import type { Track } from "../../music";
 
 /** Behavior signals the engine records while the app is used. */
-export type SignalType = 'complete' | 'skip' | 'search' | 'playlist_add';
+export type SignalType = "complete" | "skip" | "search" | "playlist_add";
 
 export type BehaviorEvent = {
   /** Epoch milliseconds when the event happened. */
@@ -73,7 +73,7 @@ export type TasteProfile = {
 /** A recommended track candidate with provenance and engine score. */
 export type Candidate = {
   track: Track;
-  source: 'radio' | 'likes-radio' | 'artist' | 'search';
+  source: "radio" | "likes-radio" | "artist" | "search";
   /** Human label of where this came from (seed track title / artist name / term). */
   sourceLabel: string;
   artistKey: string;
@@ -85,12 +85,12 @@ export type Candidate = {
 };
 
 export type SectionKind =
-  | 'discover-mix'
-  | 'recently-played'
-  | 'because-you-played'
-  | 'more-from-artist'
-  | 'based-on-likes'
-  | 'rediscover';
+  | "discover-mix"
+  | "recently-played"
+  | "because-you-played"
+  | "more-from-artist"
+  | "based-on-likes"
+  | "rediscover";
 
 export type RecoSection = {
   kind: SectionKind;
@@ -101,7 +101,7 @@ export type RecoSection = {
   context?: string;
 };
 
-export type RecoStatus = 'cold' | 'loading' | 'partial' | 'ready';
+export type RecoStatus = "cold" | "loading" | "partial" | "ready";
 
 export type RecoResult = {
   status: RecoStatus;

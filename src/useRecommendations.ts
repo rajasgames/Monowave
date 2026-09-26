@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { bindRecoStorageToAsyncStorage } from './services/recommendations/asyncStorageKV';
-import { generateRecommendations, subscribeSignals } from './services/recommendations';
-import type { RecoResult } from './services/recommendations';
-import type { useMonowave } from './useMonowave';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { bindRecoStorageToAsyncStorage } from "./services/recommendations/asyncStorageKV";
+import {
+  generateRecommendations,
+  subscribeSignals,
+} from "./services/recommendations";
+import type { RecoResult } from "./services/recommendations";
+import type { useMonowave } from "./useMonowave";
 
 type UseMonowaveReturn = ReturnType<typeof useMonowave>;
 
@@ -21,7 +24,11 @@ export type RecoState = {
  */
 export function useRecommendations(app: UseMonowaveReturn) {
   const { data, ready } = app;
-  const [state, setState] = useState<RecoState>({ result: null, refreshing: false, error: null });
+  const [state, setState] = useState<RecoState>({
+    result: null,
+    refreshing: false,
+    error: null,
+  });
   const [signalRevision, setSignalRevision] = useState(0);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -36,45 +43,55 @@ export function useRecommendations(app: UseMonowaveReturn) {
   const inputsKey = JSON.stringify([
     ready,
     signalRevision,
-    data.history.map(entry => [entry.track.id, entry.playedAt]),
-    data.liked.map(track => track.id),
-    data.playlists.map(list => [list.id, list.tracks.map(track => track.id)]),
+    data.history.map((entry) => [entry.track.id, entry.playedAt]),
+    data.liked.map((track) => track.id),
+    data.playlists.map((list) => [
+      list.id,
+      list.tracks.map((track) => track.id),
+    ]),
   ]);
 
-  const regenerate = useCallback(async (manual: boolean) => {
-    if (!ready) return;
-    if (running.current) {
-      pendingRun.current = true;
-      pendingManual.current = pendingManual.current || manual;
-      return;
-    }
-    running.current = true;
-    if (manual) setState(previous => ({ ...previous, refreshing: true }));
-    try {
-      const snapshot = dataRef.current;
-      const result = await generateRecommendations(
-        { history: snapshot.history, liked: snapshot.liked, playlists: snapshot.playlists },
-        { ignoreMixCache: manual },
-      );
-      setState({ result, refreshing: false, error: null });
-    } catch (error) {
-      // Generation itself never throws per-section; a throw here is a bug or
-      // storage failure. Keep previous sections, surface an honest note.
-      setState(previous => ({
-        result: previous.result,
-        refreshing: false,
-        error: `Recommendations could not update: ${error instanceof Error ? error.message : String(error)}`,
-      }));
-    } finally {
-      running.current = false;
-      if (pendingRun.current) {
-        const manualPending = pendingManual.current;
-        pendingRun.current = false;
-        pendingManual.current = false;
-        void regenerate(manualPending);
+  const regenerate = useCallback(
+    async (manual: boolean) => {
+      if (!ready) return;
+      if (running.current) {
+        pendingRun.current = true;
+        pendingManual.current = pendingManual.current || manual;
+        return;
       }
-    }
-  }, [ready]);
+      running.current = true;
+      if (manual) setState((previous) => ({ ...previous, refreshing: true }));
+      try {
+        const snapshot = dataRef.current;
+        const result = await generateRecommendations(
+          {
+            history: snapshot.history,
+            liked: snapshot.liked,
+            playlists: snapshot.playlists,
+          },
+          { ignoreMixCache: manual },
+        );
+        setState({ result, refreshing: false, error: null });
+      } catch (error) {
+        // Generation itself never throws per-section; a throw here is a bug or
+        // storage failure. Keep previous sections, surface an honest note.
+        setState((previous) => ({
+          result: previous.result,
+          refreshing: false,
+          error: `Recommendations could not update: ${error instanceof Error ? error.message : String(error)}`,
+        }));
+      } finally {
+        running.current = false;
+        if (pendingRun.current) {
+          const manualPending = pendingManual.current;
+          pendingRun.current = false;
+          pendingManual.current = false;
+          void regenerate(manualPending);
+        }
+      }
+    },
+    [ready],
+  );
 
   useEffect(() => {
     if (!bound.current) {
@@ -83,18 +100,31 @@ export function useRecommendations(app: UseMonowaveReturn) {
     }
   }, []);
 
-  useEffect(() => subscribeSignals(() => {
-    setSignalRevision(revision => revision + 1);
-  }), []);
+  useEffect(
+    () =>
+      subscribeSignals(() => {
+        setSignalRevision((revision) => revision + 1);
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!ready) return;
-    const timer = setTimeout(() => { void regenerate(false); }, 2500);
+    const timer = setTimeout(() => {
+      void regenerate(false);
+    }, 2500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputsKey, ready]);
 
-  const refresh = useCallback(() => { void regenerate(true); }, [regenerate]);
+  const refresh = useCallback(() => {
+    void regenerate(true);
+  }, [regenerate]);
 
-  return { reco: state.result, refreshing: state.refreshing, error: state.error, refresh };
+  return {
+    reco: state.result,
+    refreshing: state.refreshing,
+    error: state.error,
+    refresh,
+  };
 }

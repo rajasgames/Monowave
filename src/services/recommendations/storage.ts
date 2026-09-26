@@ -11,12 +11,17 @@ export type KVStore = {
 const memoryBackends = new Map<string, Map<string, string>>();
 
 /** Fresh in-memory backend (used by tests and as a safe fallback). */
-export function memoryKV(persist = false, name = 'default'): KVStore {
+export function memoryKV(persist = false, name = "default"): KVStore {
   let store = persist ? memoryBackends.get(name) : undefined;
-  if (!store) { store = new Map(); if (persist) memoryBackends.set(name, store); }
+  if (!store) {
+    store = new Map();
+    if (persist) memoryBackends.set(name, store);
+  }
   return {
-    get: async key => store!.get(key) ?? null,
-    set: async (key, value) => { store!.set(key, value); },
+    get: async (key) => store!.get(key) ?? null,
+    set: async (key, value) => {
+      store!.set(key, value);
+    },
   };
 }
 

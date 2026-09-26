@@ -7,7 +7,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.GZIPInputStream
 
-internal class HttpDownloader : Downloader() {
+internal class StreamExtractorDownloader : Downloader() {
   companion object {
     const val AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
   }

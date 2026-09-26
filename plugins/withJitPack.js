@@ -1,4 +1,4 @@
-const { withProjectBuildGradle } = require('expo/config-plugins');
+const { withProjectBuildGradle } = require("expo/config-plugins");
 
 /** The NewPipeExtractor artifact is served by JitPack. Reapply on prebuild. */
 function addJitPack(contents) {
@@ -6,19 +6,23 @@ function addJitPack(contents) {
 
   const updated = contents.replace(
     /(allprojects\s*\{\s*repositories\s*\{)/,
-    "$1\n        maven { url 'https://jitpack.io' }"
+    "$1\n        maven { url 'https://jitpack.io' }",
   );
 
   if (updated === contents) {
-    throw new Error('withJitPack: could not locate allprojects repositories in android/build.gradle');
+    throw new Error(
+      "withJitPack: could not locate allprojects repositories in android/build.gradle",
+    );
   }
   return updated;
 }
 
 module.exports = function withJitPack(config) {
   return withProjectBuildGradle(config, (cfg) => {
-    if (cfg.modResults.language !== 'groovy') {
-      throw new Error(`withJitPack: expected Groovy build.gradle, got ${cfg.modResults.language}`);
+    if (cfg.modResults.language !== "groovy") {
+      throw new Error(
+        `withJitPack: expected Groovy build.gradle, got ${cfg.modResults.language}`,
+      );
     }
     cfg.modResults.contents = addJitPack(cfg.modResults.contents);
     return cfg;

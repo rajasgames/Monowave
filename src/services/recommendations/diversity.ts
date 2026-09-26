@@ -1,5 +1,5 @@
-import { WEIGHTS, artistKey, artistAffinity } from './scoring';
-import type { Candidate, TasteProfile } from './types';
+import { WEIGHTS, artistKey, artistAffinity } from "./scoring";
+import type { Candidate, TasteProfile } from "./types";
 
 /**
  * Diversity pass: dedupes against known ids and recent history, caps how
@@ -39,7 +39,10 @@ export type DiversityOptions = {
 };
 
 /** Applies dedupe + artist caps; preserves input order among survivors. */
-export function applyDiversity(candidates: Candidate[], options: DiversityOptions = {}): Candidate[] {
+export function applyDiversity(
+  candidates: Candidate[],
+  options: DiversityOptions = {},
+): Candidate[] {
   const exclude = options.excludeIds ?? new Set<string>();
   const seeds = options.seedIds ?? new Set<string>();
   const maxPerArtist = options.maxPerArtist ?? WEIGHTS.maxPerArtist;
@@ -57,8 +60,9 @@ export function applyDiversity(candidates: Candidate[], options: DiversityOption
     const artistCount = perArtist.get(candidate.artistKey) ?? 0;
     if (artistCount >= maxPerArtist) continue;
 
-    const inWindow = window.slice(-WEIGHTS.windowSize)
-      .filter(key => key === candidate.artistKey).length;
+    const inWindow = window
+      .slice(-WEIGHTS.windowSize)
+      .filter((key) => key === candidate.artistKey).length;
     if (inWindow >= windowMax) continue;
 
     seenIds.add(id);
@@ -76,9 +80,12 @@ export function applyDiversity(candidates: Candidate[], options: DiversityOption
  * the band whenever the candidate pool is large enough to allow it, and the
  * result never floods with exploration when regular candidates run out.
  */
-export function applyExplorationQuota(candidates: Candidate[], targetSize: number): { picked: Candidate[]; explorationCount: number } {
-  const exploring = candidates.filter(candidate => candidate.exploration);
-  const regular = candidates.filter(candidate => !candidate.exploration);
+export function applyExplorationQuota(
+  candidates: Candidate[],
+  targetSize: number,
+): { picked: Candidate[]; explorationCount: number } {
+  const exploring = candidates.filter((candidate) => candidate.exploration);
+  const regular = candidates.filter((candidate) => !candidate.exploration);
   const wanted = Math.max(1, Math.round(targetSize * WEIGHTS.explorationRatio));
 
   // Reserve exploration slots; keep the realized share at or below the 30%
@@ -86,7 +93,10 @@ export function applyExplorationQuota(candidates: Candidate[], targetSize: numbe
   let reserve = Math.min(wanted, exploring.length);
   for (let round = 0; round < 4; round++) {
     const total = Math.min(targetSize, regular.length + reserve);
-    const capped = Math.min(reserve, Math.max(1, Math.floor(total * WEIGHTS.explorationMax)));
+    const capped = Math.min(
+      reserve,
+      Math.max(1, Math.floor(total * WEIGHTS.explorationMax)),
+    );
     if (capped === reserve) break;
     reserve = capped;
   }
@@ -94,7 +104,9 @@ export function applyExplorationQuota(candidates: Candidate[], targetSize: numbe
 
   const slots = new Set<number>();
   for (let index = 0; index < reserve; index++) {
-    slots.add(Math.min(total - 1, Math.round((index * total) / Math.max(1, reserve))));
+    slots.add(
+      Math.min(total - 1, Math.round((index * total) / Math.max(1, reserve))),
+    );
   }
 
   const picked: Candidate[] = [];
@@ -113,7 +125,10 @@ export function applyExplorationQuota(candidates: Candidate[], targetSize: numbe
 }
 
 /** Flags candidates whose artist is unknown or weakly liked as exploration. */
-export function isExplorationCandidate(profile: TasteProfile, artist: string): boolean {
+export function isExplorationCandidate(
+  profile: TasteProfile,
+  artist: string,
+): boolean {
   const key = artistKey(artist);
   const stats = profile.artistStats.get(key);
   if (!stats) return true; // completely unknown artist => exploration

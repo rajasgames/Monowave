@@ -1,55 +1,19 @@
 # Monowave
 
-A beautiful, open-source music player built with React Native and Expo. Monowave offers a premium, ad-free listening experience focused on a dark aesthetic, seamless navigation, and smart local recommendations.
+A beautifully simple, local-first music streaming app powered by YouTube Music but free of their algorithms and tracking. Built with Expo, React Native, and a local NewPipe extractor.
 
-## ✨ Features
+## Features
 
-- **Premium UI/UX:** A carefully crafted dark mode interface with glassmorphism elements, custom Phosphor icons, and smooth micro-animations.
-- **Smart Recommendations:** Built-in recommendation engine that learns from your listening history, likes, and playlists to curate a personalized Discover Mix.
-- **Robust Playback:** Uses `expo-audio` and NewPipe Extractor to resolve and stream high-quality audio seamlessly.
-- **Local Library:** All your likes, playlists, history, and queue are stored locally on your device for absolute privacy.
-- **YouTube Music Import:** Easily import public playlists directly from YouTube Music into your local library.
-- **Seamless Navigation:** Custom tab-based history navigation stack with native Android hardware back-button support for a flawless UX.
+- **No Server:** Everything runs on your device. The app talks directly to YouTube Music via NewPipe Extractor.
+- **Local-First Library:** Playlists, history, and liked songs are saved to local SQLite/AsyncStorage.
+- **Offline Capable:** Cached thumbnails and robust offline modes (streaming requires network).
+- **Custom Recommendations:** An on-device algorithm (TF-IDF + Collaborative Filtering approximation) scores your listening history and crafts a "Discover Mix" just for you.
+- **P0 Background Audio:** Seamless background and lock-screen playback integration via `expo-audio`.
 
-## 🛠 Tech Stack
+## Getting Started
 
-- **Framework:** React Native + Expo (SDK 57)
-- **Language:** TypeScript
-- **Styling:** Vanilla React Native StyleSheet (Zero dependencies, pure performance)
-- **Icons:** Phosphor Icons (`phosphor-react-native`, `react-native-svg`)
-- **Storage:** AsyncStorage
-- **Audio/Media:** `expo-audio`, NewPipe Extractor (via Native Modules)
+See [BUILDING.md](./BUILDING.md) for instructions on setting up your local environment and running the app.
 
-## 🚀 How It Was Made
+## License
 
-Monowave was built with a strict focus on "Music First" architecture:
-1. **The Core Engine:** We leveraged Expo's powerful audio API alongside custom stream extraction to parse playable streams from standard video URLs without heavy backend dependencies.
-2. **The UX Overhaul:** We moved away from generic UI frameworks and text-based icons. Instead, we implemented a custom design system entirely in standard React Native `StyleSheet`, achieving complete control over gradients, spacing, and typography.
-3. **Optimizing Interactions:** To solve the common React Native "rapid tap" audio overlap bugs, we implemented immediate playback suspension hooks. To handle navigation smoothly, we bypassed heavy routing libraries in favor of a custom, lightweight array-based history stack that flawlessly syncs with Android's hardware back behavior.
-
-## 📦 Building from Source
-
-To build Monowave locally, ensure you have Node.js and the Android SDK installed.
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/rajasgames/Monowave.git
-   cd Monowave
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Prebuild native Android folders:
-   ```bash
-   npm run prebuild:android
-   ```
-4. Build the APK:
-   ```bash
-   cd android
-   ./gradlew assembleRelease
-   ```
-The output APK will be available in `android/app/build/outputs/apk/release/app-release.apk`.
-
-## 📜 License
-This project is licensed under the GPL-3.0-or-later License.
+Monowave is licensed under the GPL-3.0-or-later. See the [LICENSE](./LICENSE) file for more information.

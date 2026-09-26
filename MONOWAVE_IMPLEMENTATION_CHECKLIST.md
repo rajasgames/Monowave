@@ -14,103 +14,103 @@ Baseline: `rajasgames/Monowave@4d02ba84d2513760332de54abc69b6349809a924`
 - [x] Add Node version pin
 - [x] Align version to planned v1.0.0
 - [x] Choose permanent Android package id
-- [ ] Add full GPL license
-- [ ] Add COPYRIGHT
-- [ ] Add THIRD_PARTY_NOTICES.md
-- [ ] Implement `modules/stream-extractor/android/build.gradle`
-- [ ] Implement Android manifest for local module
-- [ ] Implement `StreamExtractorDownloader.kt`
-- [ ] Implement `StreamExtractorModule.kt`
-- [ ] Add structured native result types
-- [ ] Confirm module name = `MonowaveExtractor`
-- [ ] Confirm autolinking
-- [ ] Clean prebuild
-- [ ] Gradle assembleDebug
-- [ ] Real Android stream resolve
-- [ ] Real Android playback
-- [ ] Background playback
-- [ ] Lock-screen controls
-- [ ] Prevent rapid-tap overlap
+- [x] Add full GPL license
+- [x] Add COPYRIGHT
+- [x] Add THIRD_PARTY_NOTICES.md
+- [x] Implement `modules/stream-extractor/android/build.gradle`
+- [x] Implement Android manifest for local module
+- [x] Implement `StreamExtractorDownloader.kt`
+- [x] Implement `StreamExtractorModule.kt`
+- [x] Add structured native result types
+- [x] Confirm module name = `MonowaveExtractor`
+- [x] Confirm autolinking
+- [x] Clean prebuild
+- [x] Gradle assembleDebug
+- [x] Real Android stream resolve
+- [x] Real Android playback
+- [x] Background playback
+- [x] Lock-screen controls
+- [x] Prevent rapid-tap overlap
 
 ## Architecture
 
-- [ ] Add domain `Track`
-- [ ] Add `ResolvedStream`
-- [ ] Add structured `AppError`
-- [ ] Split HTTP client
-- [ ] Split YouTube provider client
-- [ ] Split provider parser
-- [ ] Add parser fixtures
-- [ ] Add `MusicCatalog`
-- [ ] Add `StreamSource`
-- [ ] Add `StreamResolver`
-- [ ] Add in-memory stream expiry cache
-- [ ] Add resolve de-duplication
-- [ ] Extract `PlaybackEngine`
-- [ ] Extract pure queue functions
-- [ ] Add storage repository
-- [ ] Add storage schema version
-- [ ] Add migrations
-- [ ] Preserve recommendation modules
+- [x] Add domain `Track`
+- [x] Add `ResolvedStream`
+- [x] Add structured `AppError`
+- [x] Split HTTP client
+- [x] Split YouTube provider client
+- [x] Split provider parser
+- [x] Add parser fixtures
+- [x] Add `MusicCatalog`
+- [x] Add `StreamSource`
+- [x] Add `StreamResolver`
+- [x] Add in-memory stream expiry cache
+- [x] Add resolve de-duplication
+- [x] Extract `PlaybackEngine`
+- [x] Extract pure queue functions
+- [x] Add storage repository
+- [x] Add storage schema version
+- [x] Add migrations
+- [x] Preserve recommendation modules
 
 ## UI
 
-- [ ] Move design tokens out of `App.tsx`
-- [ ] Move utilities out of `App.tsx`
-- [ ] Extract common components
-- [ ] Extract `TrackRow`
-- [ ] Extract recommendation components
-- [ ] Extract mini-player
-- [ ] Create Home screen
-- [ ] Create Search screen
-- [ ] Create Library screen
-- [ ] Create History screen
-- [ ] Create Settings screen
-- [ ] Create Now Playing screen
-- [ ] Create Playlist screen
-- [ ] Create Collection screen
-- [ ] Add navigation
-- [ ] Android back behavior verified
-- [ ] Virtualize long lists
-- [ ] Accessibility labels
-- [ ] Touch targets
-- [ ] Empty/loading/error states
+- [x] Move design tokens out of `App.tsx`
+- [x] Move utilities out of `App.tsx`
+- [x] Extract common components
+- [x] Extract `TrackRow`
+- [x] Extract recommendation components
+- [x] Extract mini-player
+- [x] Create Home screen
+- [x] Create Search screen
+- [x] Create Library screen
+- [x] Create History screen
+- [x] Create Settings screen
+- [x] Create Now Playing screen
+- [x] Create Playlist screen
+- [x] Create Collection screen
+- [x] Add navigation
+- [x] Android back behavior verified
+- [x] Virtualize long lists
+- [x] Accessibility labels
+- [x] Touch targets
+- [x] Empty/loading/error states
 
 ## Tests
 
-- [ ] Queue tests
-- [ ] Shuffle/repeat tests
-- [ ] URL parser tests
-- [ ] YouTube parser fixture tests
-- [ ] Error mapping tests
-- [ ] Storage migration tests
-- [ ] Recommendation scoring tests
-- [ ] Recommendation diversity tests
-- [ ] Stream expiry tests
-- [ ] Stream resolver integration tests
-- [ ] Storage integration tests
-- [ ] Playback controller tests
-- [ ] Critical component tests
-- [ ] Android smoke/E2E flow
+- [x] Queue tests
+- [x] Shuffle/repeat tests
+- [x] URL parser tests
+- [x] YouTube parser fixture tests
+- [x] Error mapping tests
+- [x] Storage migration tests
+- [x] Recommendation scoring tests
+- [x] Recommendation diversity tests
+- [x] Stream expiry tests
+- [x] Stream resolver integration tests
+- [x] Storage integration tests
+- [x] Playback controller tests
+- [x] Critical component tests
+- [x] Android smoke/E2E flow
 
 ## CI/release
 
-- [ ] GitHub Actions JS quality job
-- [ ] Expo integrity job
-- [ ] Android clean-build job
-- [ ] Dependabot
-- [ ] Branch protection requirements
-- [ ] CHANGELOG.md
-- [ ] README rewrite
-- [ ] BUILDING.md
-- [ ] ARCHITECTURE.md
-- [ ] PLAYBACK.md
-- [ ] RECOMMENDATIONS.md
-- [ ] PRIVACY.md
-- [ ] RELEASE.md
-- [ ] TROUBLESHOOTING.md
-- [ ] Version consistency check
-- [ ] Signed AAB release
-- [ ] APK smoke build
-- [ ] Checksums
-- [ ] Release notes
+- [x] GitHub Actions JS quality job
+- [x] Expo integrity job
+- [x] Android clean-build job
+- [x] Dependabot
+- [x] Branch protection requirements
+- [x] CHANGELOG.md
+- [x] README rewrite
+- [x] BUILDING.md
+- [x] ARCHITECTURE.md
+- [x] PLAYBACK.md
+- [x] RECOMMENDATIONS.md
+- [x] PRIVACY.md
+- [x] RELEASE.md
+- [x] TROUBLESHOOTING.md
+- [x] Version consistency check
+- [x] Signed AAB release
+- [x] APK smoke build
+- [x] Checksums
+- [x] Release notes

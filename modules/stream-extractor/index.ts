@@ -1,16 +1,25 @@
-import { NativeModule, requireOptionalNativeModule } from 'expo-modules-core';
+import StreamExtractorModule from "./src/StreamExtractorModule";
+import { NativeStreamResult } from "./src/StreamExtractor.types";
 
-type Result =
-  | { ok: true; url: string; userAgent: string; title?: string; duration?: number }
-  | { ok: false; message: string };
+export * from "./src/StreamExtractor.types";
 
-declare class Extractor extends NativeModule<{}> {
-  resolve(videoId: string): Promise<Result>;
-}
-const native = requireOptionalNativeModule<Extractor>('MonowaveExtractor');
-
-export async function resolveAudio(videoId: string): Promise<Result> {
-  if (!native) return { ok: false, message: 'Android extractor is missing. Build a development client.' };
-  try { return await native.resolve(videoId); }
-  catch (error) { return { ok: false, message: String(error) }; }
+export async function resolveAudio(
+  videoId: string,
+): Promise<NativeStreamResult> {
+  if (!StreamExtractorModule) {
+    return {
+      ok: false,
+      reason: "unsupported",
+      message: "Android extractor is missing. Build a development client.",
+    };
+  }
+  try {
+    return await StreamExtractorModule.resolve(videoId);
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "unknown",
+      message: String(error),
+    };
+  }
 }

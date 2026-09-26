@@ -517,20 +517,20 @@ type NativeStreamSuccess = {
 };
 
 type NativeStreamFailureReason =
-  | 'invalid_id'
-  | 'network'
-  | 'geo_restricted'
-  | 'age_restricted'
-  | 'paid_content'
-  | 'private_content'
-  | 'unavailable'
-  | 'sign_in_required'
-  | 'rate_limited'
-  | 'unsupported'
-  | 'live_stream'
-  | 'no_audio_stream'
-  | 'extraction_failed'
-  | 'unknown';
+  | "invalid_id"
+  | "network"
+  | "geo_restricted"
+  | "age_restricted"
+  | "paid_content"
+  | "private_content"
+  | "unavailable"
+  | "sign_in_required"
+  | "rate_limited"
+  | "unsupported"
+  | "live_stream"
+  | "no_audio_stream"
+  | "extraction_failed"
+  | "unknown";
 
 type NativeStreamFailure = {
   ok: false;
@@ -613,12 +613,12 @@ Core entities should not be tied directly to a YouTube response shape.
 Recommended model:
 
 ```ts
-export type ProviderId = 'youtube';
+export type ProviderId = "youtube";
 
 export type Track = {
-  id: string;                 // stable Monowave id, e.g. youtube:<videoId>
+  id: string; // stable Monowave id, e.g. youtube:<videoId>
   provider: ProviderId;
-  sourceId: string;           // raw provider id
+  sourceId: string; // raw provider id
   title: string;
   artist: string;
   artistId?: string;
@@ -895,7 +895,7 @@ A completed track and a skipped track are distinct recommendation signals.
 Define completion threshold explicitly, for example:
 
 - `didJustFinish` from player, OR
-- >= 90% listened when playback state indicates natural finish.
+- > = 90% listened when playback state indicates natural finish.
 
 Do not count a natural auto-advance as a skip.
 
@@ -1004,13 +1004,13 @@ During development, recommendation candidates SHOULD expose debug metadata:
 
 ```ts
 {
-  totalScore,
-  affinityScore,
-  recencyScore,
-  completionScore,
-  skipPenalty,
-  playlistSignal,
-  diversityPenalty
+  (totalScore,
+    affinityScore,
+    recencyScore,
+    completionScore,
+    skipPenalty,
+    playlistSignal,
+    diversityPenalty);
 }
 ```
 
@@ -1213,16 +1213,16 @@ Example:
 
 ```ts
 export type AppErrorKind =
-  | 'network'
-  | 'timeout'
-  | 'rate_limited'
-  | 'track_unavailable'
-  | 'region_restricted'
-  | 'source_unavailable'
-  | 'parser_changed'
-  | 'storage'
-  | 'native_module_missing'
-  | 'unknown';
+  | "network"
+  | "timeout"
+  | "rate_limited"
+  | "track_unavailable"
+  | "region_restricted"
+  | "source_unavailable"
+  | "parser_changed"
+  | "storage"
+  | "native_module_missing"
+  | "unknown";
 
 export type AppError = {
   kind: AppErrorKind;
@@ -1863,15 +1863,15 @@ Each branch must pass the current quality gates before moving to the next.
 
 A v1 release candidate should target:
 
-| Area | Target |
-|---|---:|
-| Functional completeness | 23-25 / 25 |
-| Architecture/maintainability | 18-20 / 20 |
-| Build/release readiness | 18-20 / 20 |
-| Reliability/testing | 12-15 / 15 |
-| Documentation/licensing | 10 / 10 |
-| UI/product polish | 8-10 / 10 |
-| **Overall** | **89-100 / 100** |
+| Area                         |           Target |
+| ---------------------------- | ---------------: |
+| Functional completeness      |       23-25 / 25 |
+| Architecture/maintainability |       18-20 / 20 |
+| Build/release readiness      |       18-20 / 20 |
+| Reliability/testing          |       12-15 / 15 |
+| Documentation/licensing      |          10 / 10 |
+| UI/product polish            |        8-10 / 10 |
+| **Overall**                  | **89-100 / 100** |
 
 The project should not be tagged v1.0.0 until all P0 gates pass.
 
@@ -2058,6 +2058,6 @@ UI must not know NewPipe details.
 Recommendation code must not know React Native navigation.  
 Playback must not parse YouTube Music search JSON.  
 The native extractor must not own app library state.  
-Storage must not own UI state.  
+Storage must not own UI state.
 
 That separation is the core requirement that turns Monowave from a prototype into a maintainable v1 product.
