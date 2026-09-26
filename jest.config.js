@@ -9,6 +9,9 @@ module.exports = {
     "^expo-audio$": "<rootDir>/tests/mocks/expo-audio.ts",
     "^@react-native-async-storage/async-storage$":
       "<rootDir>/tests/mocks/async-storage.ts",
+    "^react-native$": "<rootDir>/tests/mocks/react-native.ts",
+    "^react-native-safe-area-context$":
+      "<rootDir>/tests/mocks/react-native-safe-area-context.ts",
   },
   transform: {
     "^.+\\.tsx?$": [

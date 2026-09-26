@@ -10,16 +10,17 @@ export function createAudioPlayer() {
     setActiveForLockScreen: jest.fn(),
     addListener: jest.fn(
       (event: string, callback: (...args: any[]) => void) => {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(callback);
-      return {
-        remove: () => {
-          listeners[event] = (listeners[event] || []).filter(
-            (cb) => cb !== callback,
-          );
-        },
-      };
-    }),
+        if (!listeners[event]) listeners[event] = [];
+        listeners[event].push(callback);
+        return {
+          remove: () => {
+            listeners[event] = (listeners[event] || []).filter(
+              (cb) => cb !== callback,
+            );
+          },
+        };
+      },
+    ),
   };
 }
 

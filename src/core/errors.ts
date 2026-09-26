@@ -142,3 +142,82 @@ export function mapNativeFailureToAppError(
       );
   }
 }
+
+/**
+ * Checks whether an error represents a canceled or aborted request,
+ * accounting for variations in fetch/network abort representations across React Native.
+ */
+export function isRequestCanceled(
+  error: unknown,
+  signal?: AbortSignal,
+): boolean {
+  if (signal?.aborted) return true;
+  if (!error) return false;
+  if (typeof error === "object") {
+    const err = error as { name?: string; message?: string };
+    if (
+      err.name === "AbortError" ||
+      err.name === "CanceledError" ||
+      err.name === "CancelledError"
+    ) {
+      return true;
+    }
+    const msg = String(err.message || "").toLowerCase();
+    if (
+      msg.includes("abort") ||
+      msg.includes("cancel") ||
+      msg.includes("the user aborted a request") ||
+      msg.includes("fetch request has been canceled")
+    ) {
+      return true;
+    }
+  }
+  const str = String(error).toLowerCase();
+  return str.includes("abort") || str.includes("cancel");
+}
+
+/**
+ * Maps search failures to friendly user messages instead of exposing raw technical errors.
+ */
+export function mapSearchError(error: unknown): {
+  message: string;
+  retryable: boolean;
+} {
+  const msg = (
+    error instanceof Error ? error.message : String(error || "")
+  ).toLowerCase();
+
+  // Timeout failure
+  if (
+    msg.includes("timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("taking longer")
+  ) {
+    return {
+      message: "Search is taking longer than expected. Try again.",
+      retryable: true,
+    };
+  }
+
+  // Network / connection / offline failure
+  if (
+    msg.includes("network") ||
+    msg.includes("offline") ||
+    msg.includes("failed to connect") ||
+    msg.includes("enotfound") ||
+    msg.includes("econnrefused") ||
+    msg.includes("econnreset") ||
+    msg.includes("internet")
+  ) {
+    return {
+      message: "You’re offline. Check your connection and try again.",
+      retryable: true,
+    };
+  }
+
+  // Provider / server failure or general fallback
+  return {
+    message: "YouTube Music is temporarily unavailable.",
+    retryable: true,
+  };
+}

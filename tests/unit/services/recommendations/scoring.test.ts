@@ -41,8 +41,22 @@ describe("scoring", () => {
     });
 
     it("subtracts for skips", () => {
-      const affinity1 = trackAffinity({ plays: 1, completes: 1, liked: false, playlistAdds: 0, skips: 0, quickSkips: 0 });
-      const affinity2 = trackAffinity({ plays: 1, completes: 1, liked: false, playlistAdds: 0, skips: 5, quickSkips: 0 });
+      const affinity1 = trackAffinity({
+        plays: 1,
+        completes: 1,
+        liked: false,
+        playlistAdds: 0,
+        skips: 0,
+        quickSkips: 0,
+      });
+      const affinity2 = trackAffinity({
+        plays: 1,
+        completes: 1,
+        liked: false,
+        playlistAdds: 0,
+        skips: 5,
+        quickSkips: 0,
+      });
       expect(affinity2).toBeLessThan(affinity1);
     });
   });
@@ -64,7 +78,9 @@ describe("scoring", () => {
   describe("stableHash and deterministicJitter", () => {
     it("is deterministic", () => {
       expect(stableHash("test1")).toBe(stableHash("test1"));
-      expect(deterministicJitter("seed", 0.5)).toBe(deterministicJitter("seed", 0.5));
+      expect(deterministicJitter("seed", 0.5)).toBe(
+        deterministicJitter("seed", 0.5),
+      );
     });
   });
 });

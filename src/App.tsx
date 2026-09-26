@@ -1,13 +1,20 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Pressable, Text, Modal, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { StateProvider, usePlayer } from "./state/PlayerContext";
 import { RootNavigator } from "./navigation/RootNavigator";
 import { MiniPlayer, Artwork } from "./ui/components";
 import { C } from "./ui/theme";
-import { Heart, Plus, DotsThreeVertical, Play } from "phosphor-react-native";
-import { NavigationContainer, DefaultTheme, useNavigationContainerRef } from "@react-navigation/native";
+import { Heart, Play } from "phosphor-react-native";
+import {
+  NavigationContainer,
+  DefaultTheme,
+  useNavigationContainerRef,
+} from "@react-navigation/native";
 import type { RootStackParamList } from "./navigation/types";
 
 function AppContent() {
@@ -15,6 +22,7 @@ function AppContent() {
   const { actionTrack, setActionTrack } = player;
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const [routeName, setRouteName] = useState<string | undefined>("Home");
+  const insets = useSafeAreaInsets();
 
   const onReady = () => {
     setRouteName(navigationRef.getCurrentRoute()?.name);
@@ -24,6 +32,8 @@ function AppContent() {
   };
 
   const showMiniPlayer = player.current && routeName !== "Player";
+  const tabHeight = 56 + insets.bottom;
+  const miniPlayerBottom = tabHeight + 10; // 8-12dp above tab bar
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -47,9 +57,11 @@ function AppContent() {
       >
         <RootNavigator />
       </NavigationContainer>
-      
+
       {showMiniPlayer ? (
-        <View style={styles.miniPlayerContainer}>
+        <View
+          style={[styles.miniPlayerContainer, { bottom: miniPlayerBottom }]}
+        >
           <MiniPlayer
             track={player.current!}
             playing={player.playing}
@@ -70,7 +82,13 @@ function AppContent() {
         onRequestClose={() => setActionTrack(null)}
       >
         <Pressable style={styles.overlay} onPress={() => setActionTrack(null)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={[
+              styles.sheet,
+              { paddingBottom: Math.max(insets.bottom, 20) + 16 },
+            ]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.sheetHandle} />
             <View style={styles.sheetTrackHeader}>
               <Artwork uri={actionTrack?.cover} size={66} radius={16} />
@@ -144,9 +162,9 @@ export default function App() {
 const styles = StyleSheet.create({
   miniPlayerContainer: {
     position: "absolute",
-    bottom: 64, // height of BottomTabNavigator
-    left: 0,
-    right: 0,
+    left: 14,
+    right: 14,
+    zIndex: 99,
   },
   overlay: {
     flex: 1,
@@ -158,7 +176,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
-    paddingBottom: 48,
     borderTopWidth: 1,
     borderColor: C.lineStrong,
   },

@@ -23,6 +23,7 @@ This app requires a custom Expo Dev Client because it includes native Android co
 ## Development
 
 Once the dev client is installed on your emulator/device, you can start the bundler:
+
 ```bash
 npm start
 ```

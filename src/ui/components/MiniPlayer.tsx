@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import { Play, Pause, Heart } from "phosphor-react-native";
-import { Artwork } from "./Common";
+import { Artwork, AnimatedWaveform } from "./Common";
 import { C } from "../theme";
 import type { Track } from "../../music";
 
@@ -31,8 +31,29 @@ export function MiniPlayer({
       <View style={styles.miniProgress}>
         <View style={[styles.miniProgressFill, { width: `${progress}%` }]} />
       </View>
-      <Pressable onPress={onOpen} style={styles.miniPlayerMain} accessibilityRole="button" accessibilityLabel={`Now playing: ${track.title} by ${track.artist}`}>
-        <Artwork uri={track.cover} size={46} radius={11} />
+      <Pressable
+        onPress={onOpen}
+        style={({ pressed }) => [
+          styles.miniPlayerMain,
+          { transform: [{ scale: pressed ? 0.98 : 1 }] },
+          pressed && { opacity: 0.85 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`Now playing: ${track.title} by ${track.artist}`}
+      >
+        <View style={styles.miniArtWrap}>
+          <Artwork uri={track.cover} size={46} radius={11} />
+          {playing ? (
+            <View style={styles.miniWaveformBadge}>
+              <AnimatedWaveform
+                size={14}
+                color={C.accent}
+                animating={playing}
+                barCount={3}
+              />
+            </View>
+          ) : null}
+        </View>
         <View style={{ flex: 1 }}>
           <Text numberOfLines={1} style={styles.miniTitle}>
             {track.title}
@@ -42,7 +63,16 @@ export function MiniPlayer({
           </Text>
         </View>
       </Pressable>
-      <Pressable onPress={onToggle} hitSlop={8} style={styles.miniControl} accessibilityRole="button" accessibilityLabel={playing ? "Pause" : "Play"}>
+      <Pressable
+        onPress={onToggle}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.miniControl,
+          { transform: [{ scale: pressed ? 0.84 : 1 }] },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={playing ? "Pause" : "Play"}
+      >
         <Text style={styles.miniControlText}>
           {playing ? (
             <Pause size={20} color={C.text} weight="fill" />
@@ -51,7 +81,16 @@ export function MiniPlayer({
           )}
         </Text>
       </Pressable>
-      <Pressable onPress={onLike} hitSlop={8} style={styles.miniControl} accessibilityRole="button" accessibilityLabel={liked ? "Unlike" : "Like"}>
+      <Pressable
+        onPress={onLike}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.miniControl,
+          { transform: [{ scale: pressed ? 0.82 : 1 }] },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={liked ? "Unlike" : "Like"}
+      >
         <Text style={[styles.miniHeart, liked && { color: C.accent }]}>
           {liked ? (
             <Heart size={22} color={C.accent} weight="fill" />
@@ -66,11 +105,8 @@ export function MiniPlayer({
 
 const styles = StyleSheet.create({
   miniPlayerShell: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    bottom: 100,
-    minHeight: 68,
+    width: "100%",
+    minHeight: 66,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#19172E80",
@@ -93,6 +129,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF12",
   },
   miniProgressFill: { height: 2, backgroundColor: C.accent },
+  miniArtWrap: {
+    position: "relative",
+  },
+  miniWaveformBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    backgroundColor: "rgba(10, 10, 15, 0.85)",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(180, 107, 255, 0.4)",
+  },
   miniPlayerMain: {
     flex: 1,
     flexDirection: "row",

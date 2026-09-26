@@ -9,13 +9,20 @@ import {
 } from "react-native";
 import { Heart, MusicNotes, Plus, CaretRight } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
-import { ScreenTitle, SectionHeader, Action, TrackRow as TrackLine } from "../ui/components";
+import {
+  ScreenTitle,
+  SectionHeader,
+  Action,
+  TrackRow as TrackLine,
+} from "../ui/components";
 import { C } from "../ui/theme";
 import type { TabScreenProps } from "../navigation/types";
 import { parseLink, trackById, browseMusic } from "../music";
+import { useScreenContentPadding } from "../ui/utils";
 
 export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
   const { data, createPlaylist, playTrack, setActionTrack } = usePlayer();
+  const contentPadding = useScreenContentPadding();
   const [newList, setNewList] = useState("");
   const [importText, setImportText] = useState("");
   const [pending, setPending] = useState(false);
@@ -48,9 +55,12 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
       } else {
         const items = await browseMusic(link.id);
         if (abort.signal.aborted) return;
-        
-        const rawTracks = items.flatMap((item) => (item.track ? [item.track] : []));
-        if (!rawTracks.length) throw new Error("No tracks found in this playlist");
+
+        const rawTracks = items.flatMap((item) =>
+          item.track ? [item.track] : [],
+        );
+        if (!rawTracks.length)
+          throw new Error("No tracks found in this playlist");
 
         setImportProgress(`Deduplicating ${rawTracks.length} tracks...`);
         // Yield to UI
@@ -65,9 +75,11 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
         });
 
         createPlaylist(`Imported · ${link.id}`, uniqueTracks);
-        
+
         if (uniqueTracks.length < rawTracks.length) {
-          setError(`Imported ${uniqueTracks.length} tracks (${rawTracks.length - uniqueTracks.length} duplicates removed)`);
+          setError(
+            `Imported ${uniqueTracks.length} tracks (${rawTracks.length - uniqueTracks.length} duplicates removed)`,
+          );
         }
       }
       setImportText("");
@@ -87,16 +99,23 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
     <ScrollView
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
     >
-      <ScreenTitle title="Your library" detail="Everything you save, in one place" />
+      <ScreenTitle
+        title="Your library"
+        detail="Everything you save, in one place"
+      />
 
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <View style={styles.statRow}>
-        <Pressable onPress={() => {}} style={styles.statCard}>
+        <Pressable
+          onPress={() => {}}
+          style={({ pressed }) => [
+            styles.statCard,
+            { transform: [{ scale: pressed ? 0.96 : 1 }] },
+          ]}
+        >
           <View style={[styles.statIcon, { backgroundColor: "#5D2C7D" }]}>
             <Heart size={20} color={C.text} weight="fill" />
           </View>
@@ -106,7 +125,13 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
           </View>
           <CaretRight size={20} color={C.muted} weight="bold" />
         </Pressable>
-        <Pressable onPress={() => {}} style={styles.statCard}>
+        <Pressable
+          onPress={() => {}}
+          style={({ pressed }) => [
+            styles.statCard,
+            { transform: [{ scale: pressed ? 0.96 : 1 }] },
+          ]}
+        >
           <View style={[styles.statIcon, { backgroundColor: "#34365F" }]}>
             <MusicNotes size={20} color={C.text} weight="fill" />
           </View>
@@ -163,7 +188,10 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
               setNewList("");
             }
           }}
-          style={styles.createButton}
+          style={({ pressed }) => [
+            styles.createButton,
+            { transform: [{ scale: pressed ? 0.92 : 1 }] },
+          ]}
         >
           <Text style={styles.createButtonText}>Create</Text>
         </Pressable>
@@ -172,7 +200,11 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
       {data.playlists.map((list) => (
         <Pressable
           key={list.id}
-          style={({ pressed }) => [styles.playlistCard, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [
+            styles.playlistCard,
+            { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            pressed && { opacity: 0.8 },
+          ]}
           onPress={() => {
             navigation.navigate("Playlist", { id: list.id });
           }}
@@ -205,7 +237,7 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
           />
         </View>
         <Action
-          label={pending ? (importProgress || "Cancel") : "Import"}
+          label={pending ? importProgress || "Cancel" : "Import"}
           active
           onPress={() => void importLink()}
         />
@@ -215,7 +247,7 @@ export function LibraryScreen({ navigation }: TabScreenProps<"Library">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   statRow: { flexDirection: "row", gap: 12, marginTop: 12, marginBottom: 24 },
   statCard: {
     flex: 1,
@@ -306,7 +338,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   importInput: { flex: 1, color: C.text, fontSize: 15 },
-  placeholder: { color: C.faint, textAlign: "center", marginTop: 24, fontSize: 14 },
-  errorText: { color: C.danger, marginTop: 10, fontSize: 14, textAlign: 'center' },
+  placeholder: {
+    color: C.faint,
+    textAlign: "center",
+    marginTop: 24,
+    fontSize: 14,
+  },
+  errorText: {
+    color: C.danger,
+    marginTop: 10,
+    fontSize: 14,
+    textAlign: "center",
+  },
 });
-

@@ -1,18 +1,27 @@
 import React from "react";
-import { View, Text, ScrollView, TextInput, Linking, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  Linking,
+  StyleSheet,
+} from "react-native";
 import { usePlayer } from "../state/PlayerContext";
 import { ScreenTitle, SectionHeader, Action } from "../ui/components";
 import { C } from "../ui/theme";
 import type { RootScreenProps } from "../navigation/types";
+import { useScreenContentPadding } from "../ui/utils";
 
 export function SettingsScreen({ navigation }: RootScreenProps<"Settings">) {
   const { data, setName } = usePlayer();
+  const contentPadding = useScreenContentPadding({ isModal: true });
 
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
     >
       <ScreenTitle title="Settings" detail="Personalize Monowave" />
       <View style={styles.settingsCard}>
@@ -53,18 +62,24 @@ export function SettingsScreen({ navigation }: RootScreenProps<"Settings">) {
           label="NewPipe Extractor source  ↗"
           wide
           onPress={() =>
-            void Linking.openURL("https://github.com/TeamNewPipe/NewPipeExtractor")
+            void Linking.openURL(
+              "https://github.com/TeamNewPipe/NewPipeExtractor",
+            )
           }
         />
         <Action
           label="NØTE reference project  ↗"
           wide
-          onPress={() => void Linking.openURL("https://github.com/SJbuilds04/NOTE")}
+          onPress={() =>
+            void Linking.openURL("https://github.com/SJbuilds04/NOTE")
+          }
         />
         <Action
           label="GPL-3.0 license  ↗"
           wide
-          onPress={() => void Linking.openURL("https://www.gnu.org/licenses/gpl-3.0.html")}
+          onPress={() =>
+            void Linking.openURL("https://www.gnu.org/licenses/gpl-3.0.html")
+          }
         />
       </View>
     </ScrollView>
@@ -72,7 +87,7 @@ export function SettingsScreen({ navigation }: RootScreenProps<"Settings">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   settingsCard: {
     padding: 20,
     backgroundColor: C.panelStrong,
@@ -108,6 +123,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   body: { color: C.muted, fontSize: 14, lineHeight: 22 },
-  aboutDivider: { height: 1, backgroundColor: C.lineStrong, marginVertical: 18 },
+  aboutDivider: {
+    height: 1,
+    backgroundColor: C.lineStrong,
+    marginVertical: 18,
+  },
   linkStack: { marginTop: 24, gap: 12 },
 });

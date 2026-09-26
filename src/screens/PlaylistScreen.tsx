@@ -5,10 +5,15 @@ import { usePlayer } from "../state/PlayerContext";
 import { ScreenTitle, Action, TrackRow as TrackLine } from "../ui/components";
 import { C } from "../ui/theme";
 import type { RootScreenProps } from "../navigation/types";
+import { useScreenContentPadding } from "../ui/utils";
 
-export function PlaylistScreen({ route, navigation }: RootScreenProps<"Playlist">) {
+export function PlaylistScreen({
+  route,
+  navigation,
+}: RootScreenProps<"Playlist">) {
   const { data, playTrack, removeFromPlaylist, deletePlaylist } = usePlayer();
   const { id } = route.params;
+  const contentPadding = useScreenContentPadding({ isModal: true });
 
   const chosen = data.playlists.find((list) => list.id === id);
 
@@ -17,10 +22,15 @@ export function PlaylistScreen({ route, navigation }: RootScreenProps<"Playlist"
       data={chosen?.tracks ?? []}
       keyExtractor={(item) => item.id}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
       ListHeaderComponent={
         <>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back to library"
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <CaretLeft size={18} color={C.accent} weight="bold" />
               <Text style={styles.backButtonText}>Library</Text>
@@ -68,7 +78,7 @@ export function PlaylistScreen({ route, navigation }: RootScreenProps<"Playlist"
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   backButton: { marginBottom: 16 },
   backButtonText: {
     color: C.accent,
@@ -76,5 +86,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginLeft: 4,
   },
-  placeholder: { color: C.faint, textAlign: "center", marginTop: 24, fontSize: 14 },
+  placeholder: {
+    color: C.faint,
+    textAlign: "center",
+    marginTop: 24,
+    fontSize: 14,
+  },
 });

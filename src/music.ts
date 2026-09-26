@@ -31,7 +31,7 @@ async function request(
 ): Promise<any> {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), 13000);
-  
+
   const onAbort = () => abort.abort();
   if (signal) signal.addEventListener("abort", onAbort);
   try {
@@ -74,11 +74,41 @@ function runs(value: any): string {
 function thumb(value: any): string | undefined {
   const choices =
     value?.musicThumbnailRenderer?.thumbnail?.thumbnails ??
+    value?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails ??
     value?.thumbnails ??
     value?.thumbnail?.thumbnails ??
     [];
-  return choices.at(-1)?.url;
+  if (!Array.isArray(choices) || choices.length === 0) return undefined;
+  const valid = choices.filter(
+    (c: any) => typeof c?.url === "string" && c.url.trim().length > 0,
+  );
+  if (valid.length === 0) return undefined;
+
+  let best = valid[0];
+  let maxDim = (best.width ?? 0) * (best.height ?? 0);
+
+  for (let i = 1; i < valid.length; i++) {
+    const item = valid[i];
+    const itemDim = (item.width ?? 0) * (item.height ?? 0);
+    if (
+      itemDim > maxDim ||
+      (itemDim === maxDim && (item.width ?? 0) > (best.width ?? 0))
+    ) {
+      best = item;
+      maxDim = itemDim;
+    } else if (
+      maxDim === 0 &&
+      i === valid.length - 1 &&
+      !item.width &&
+      !item.height
+    ) {
+      best = item;
+    }
+  }
+
+  return best.url;
 }
+
 function seconds(value: string): number | undefined {
   if (!/^\d{1,2}:\d{2}(?::\d{2})?$/.test(value)) return;
   return value.split(":").reduce((acc, part) => acc * 60 + Number(part), 0);
@@ -191,7 +221,10 @@ function extract(json: any): SearchItem[] {
   ];
 }
 
-export async function searchMusic(query: string, signal?: AbortSignal): Promise<SearchItem[]> {
+export async function searchMusic(
+  query: string,
+  signal?: AbortSignal,
+): Promise<SearchItem[]> {
   const response = await request("search", { query }, signal);
   return extract(response).slice(0, 80);
 }

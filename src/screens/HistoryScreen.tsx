@@ -4,18 +4,19 @@ import { Clock } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
 import { ScreenTitle, TrackRow as TrackLine } from "../ui/components";
 import { C } from "../ui/theme";
-import { timeAgo } from "../ui/utils";
+import { timeAgo, useScreenContentPadding } from "../ui/utils";
 import type { TabScreenProps } from "../navigation/types";
 
 export function HistoryScreen({ navigation }: TabScreenProps<"History">) {
   const { data, clearHistory, playTrack, setActionTrack } = usePlayer();
+  const contentPadding = useScreenContentPadding();
 
   return (
     <FlatList
       data={data.history}
       keyExtractor={(item, index) => `${item.playedAt}:${index}`}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
       ListHeaderComponent={
         <View style={styles.historyTitleRow}>
           <ScreenTitle
@@ -56,7 +57,8 @@ export function HistoryScreen({ navigation }: TabScreenProps<"History">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
+
   historyTitleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -100,4 +102,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

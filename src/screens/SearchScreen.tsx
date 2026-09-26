@@ -1,21 +1,20 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
 import { MagnifyingGlass, CaretRight } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
-import { ScreenTitle, SearchBox, SectionHeader, TrackRow as TrackLine } from "../ui/components";
+import {
+  ScreenTitle,
+  SearchBox,
+  SectionHeader,
+  TrackRow as TrackLine,
+} from "../ui/components";
 import { C } from "../ui/theme";
 import { searchMusic } from "../music";
-import type { SearchItem } from "../music";
+import type { SearchItem, Track } from "../music";
 import type { TabScreenProps } from "../navigation/types";
-import type { Track } from "../music";
+import { useScreenContentPadding } from "../ui/utils";
+import { isRequestCanceled, mapSearchError } from "../core/errors";
 
 type Filter = "all" | "track" | "album" | "artist" | "playlist";
 
@@ -27,14 +26,35 @@ const MOODS = [
 ];
 
 const CATEGORY_FILTERS = [
-  { label: "Artists", icon: "🎤", tint: "#A14BFF30", filter: "artist" as Filter },
+  {
+    label: "Artists",
+    icon: "🎤",
+    tint: "#A14BFF30",
+    filter: "artist" as Filter,
+  },
   { label: "Albums", icon: "💿", tint: "#FF375F30", filter: "album" as Filter },
-  { label: "Playlists", icon: "📻", tint: "#30D15830", filter: "playlist" as Filter },
+  {
+    label: "Playlists",
+    icon: "📻",
+    tint: "#30D15830",
+    filter: "playlist" as Filter,
+  },
   { label: "Songs", icon: "🎵", tint: "#0A84FF30", filter: "track" as Filter },
 ];
 
+function canPerformTap(
+  lastTapRef: React.MutableRefObject<number>,
+  cooldown = 600,
+): boolean {
+  const currentTime = Date.now();
+  if (currentTime - lastTapRef.current < cooldown) return false;
+  lastTapRef.current = currentTime;
+  return true;
+}
+
 export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
   const { playTrack, setActionTrack } = usePlayer();
+  const contentPadding = useScreenContentPadding();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
@@ -43,6 +63,8 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
 
   const [history, setHistory] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+  const lastTapTimeRef = useRef(0);
 
   useEffect(() => {
     AsyncStorage.getItem("monowave-search-history").then((val) => {
@@ -59,82 +81,156 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
     if (!clean) return;
     setHistory((prev) => {
       const next = [clean, ...prev.filter((t) => t !== clean)].slice(0, 20);
-      void AsyncStorage.setItem("monowave-search-history", JSON.stringify(next));
+      void AsyncStorage.setItem(
+        "monowave-search-history",
+        JSON.stringify(next),
+      );
       return next;
     });
   };
 
-  useEffect(() => {
-    const term = query.trim();
-    if (term.length < 2) {
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    if (text.trim().length < 2) {
+      if (abortRef.current) abortRef.current.abort();
       setResults([]);
+      setError("");
+      setPending(false);
+    }
+  };
+
+  const executeSearch = useCallback((term: string) => {
+    const clean = term.trim();
+    if (clean.length < 2) {
+      if (abortRef.current) abortRef.current.abort();
       return;
     }
 
+    // Cancel prior request
     if (abortRef.current) abortRef.current.abort();
     const abort = new AbortController();
     abortRef.current = abort;
+    const currentRequestId = ++requestIdRef.current;
 
-    const timer = setTimeout(async () => {
-      setPending(true);
-      setError("");
-      try {
-        const res = await searchMusic(term, abort.signal);
-        setResults(res);
-      } catch (e: any) {
-        if (e.name !== "AbortError") {
-          setError(`Search failed: ${String(e)}`);
+    setPending(true);
+    setError("");
+
+    searchMusic(clean, abort.signal)
+      .then((res) => {
+        // Ensure only newest request updates results
+        if (
+          currentRequestId === requestIdRef.current &&
+          !abort.signal.aborted
+        ) {
+          setResults(res);
+          setPending(false);
+          setError("");
         }
-      } finally {
-        if (!abort.signal.aborted) setPending(false);
-      }
-    }, 500);
+      })
+      .catch((e: unknown) => {
+        // If superseded or canceled, ignore completely
+        if (
+          currentRequestId !== requestIdRef.current ||
+          isRequestCanceled(e, abort.signal)
+        ) {
+          return;
+        }
+        // Preserve existing results and display user-friendly error
+        const mapped = mapSearchError(e);
+        setError(mapped.message);
+        setPending(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 2) {
+      return;
+    }
+
+    // Debounce searches by ~400ms (within the 350-450ms requirement)
+    const timer = setTimeout(() => {
+      executeSearch(term);
+    }, 400);
 
     return () => {
       clearTimeout(timer);
-      abort.abort();
     };
-  }, [query]);
+  }, [query, executeSearch]);
 
   const find = (term: string) => {
     setQuery(term);
     saveHistory(term);
+    executeSearch(term);
   };
 
   const visibleResults = results.filter((r) =>
-    filter === "all" ? true : r.kind === filter
+    filter === "all" ? true : r.kind === filter,
   );
 
   const openCategory = (f: Filter) => {
     setFilter(f);
   };
 
-  const playFrom = (track: Track) => {
-    saveHistory(query);
-    playTrack(track, [track]);
-  };
+  const playFrom = useCallback(
+    (track: Track) => {
+      if (!canPerformTap(lastTapTimeRef, 600)) return;
 
-  const openCollection = (item: SearchItem) => {
-    saveHistory(query);
-    navigation.navigate("Collection", { item });
+      saveHistory(query);
+      playTrack(track, [track]);
+      // Immediately navigate to Now Playing screen upon tapping a song
+      (navigation as any).navigate("Player");
+    },
+    [navigation, playTrack, query],
+  );
+
+  const openCollection = useCallback(
+    (item: SearchItem) => {
+      if (!canPerformTap(lastTapTimeRef, 600)) return;
+
+      saveHistory(query);
+      (navigation as any).navigate("Collection", { item });
+    },
+    [navigation, query],
+  );
+
+  const retry = () => {
+    if (query.trim()) {
+      executeSearch(query.trim());
+    }
   };
 
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
+      accessibilityLiveRegion="polite"
     >
       <ScreenTitle title="Search" detail="Find your next favourite" />
       <SearchBox
         value={query}
-        onChangeText={setQuery}
+        onChangeText={handleQueryChange}
         onSearch={() => find(query)}
         placeholder="What do you want to hear?"
+        loading={pending}
       />
 
       {error ? (
-        <Text style={styles.errorText}>{error}</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            onPress={retry}
+            style={({ pressed }) => [
+              styles.retryButton,
+              { transform: [{ scale: pressed ? 0.92 : 1 }] },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Retry search"
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+        </View>
       ) : null}
 
       <ScrollView
@@ -150,7 +246,8 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
               style={({ pressed }) => [
                 styles.filterPill,
                 filter === value && styles.filterPillActive,
-                pressed && { opacity: 0.7 },
+                { transform: [{ scale: pressed ? 0.94 : 1 }] },
+                pressed && { opacity: 0.85 },
               ]}
             >
               <Text
@@ -166,7 +263,7 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
                     : `${value[0].toUpperCase()}${value.slice(1)}${value === "artist" ? "s" : "s"}`}
               </Text>
             </Pressable>
-          )
+          ),
         )}
       </ScrollView>
 
@@ -180,7 +277,8 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
                 onPress={() => find(term)}
                 style={({ pressed }) => [
                   styles.searchChip,
-                  pressed && { opacity: 0.7 },
+                  { transform: [{ scale: pressed ? 0.96 : 1 }] },
+                  pressed && { opacity: 0.85 },
                 ]}
               >
                 <MagnifyingGlass size={18} color={C.text} weight="bold" />
@@ -190,7 +288,9 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
               </Pressable>
             ))}
             {!history.length ? (
-              <Text style={styles.placeholder}>Your recent searches will appear here.</Text>
+              <Text style={styles.placeholder}>
+                Your recent searches will appear here.
+              </Text>
             ) : null}
           </View>
 
@@ -203,7 +303,8 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
                 style={({ pressed }) => [
                   styles.moodCard,
                   { backgroundColor: mood.tint },
-                  pressed && { opacity: 0.7 },
+                  { transform: [{ scale: pressed ? 0.96 : 1 }] },
+                  pressed && { opacity: 0.85 },
                 ]}
               >
                 <Text style={styles.moodIcon}>{mood.icon}</Text>
@@ -224,7 +325,8 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
                 style={({ pressed }) => [
                   styles.categoryCard,
                   { backgroundColor: category.tint },
-                  pressed && { opacity: 0.7 },
+                  { transform: [{ scale: pressed ? 0.96 : 1 }] },
+                  pressed && { opacity: 0.85 },
                 ]}
               >
                 <Text style={styles.categoryIcon}>{category.icon}</Text>
@@ -235,13 +337,7 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
         </>
       ) : null}
 
-      {pending ? (
-        <View style={{ padding: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.accent} size="large" />
-          <Text style={styles.loadingText}>Searching YouTube Music…</Text>
-        </View>
-      ) : null}
-      {!pending && results.length ? (
+      {results.length ? (
         <SectionHeader
           title="Results"
           detail={`${visibleResults.length} shown`}
@@ -256,12 +352,12 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
               title: item.title,
               artist: item.subtitle,
               cover: item.cover,
-              }
+            }
           }
           onPress={() =>
             item.track ? playFrom(item.track) : openCollection(item)
           }
-          onMore={item.track ? () => setActionTrack(item.track) : undefined}
+          onMore={item.track ? () => setActionTrack(item.track!) : undefined}
           trailing={
             item.kind === "track" ? undefined : (
               <CaretRight size={20} color={C.muted} />
@@ -269,7 +365,10 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
           }
         />
       ))}
-      {!pending && query.trim() && !visibleResults.length ? (
+      {!pending &&
+      query.trim().length >= 2 &&
+      !visibleResults.length &&
+      !error ? (
         <Text style={styles.placeholder}>
           No matching results for this filter.
         </Text>
@@ -279,7 +378,7 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   filterRow: { gap: 10, paddingVertical: 12 },
   filterPill: {
     paddingHorizontal: 20,
@@ -342,14 +441,31 @@ const styles = StyleSheet.create({
   },
   categoryIcon: { fontSize: 24 },
   categoryLabel: { color: C.text, fontSize: 15, fontWeight: "700" },
-  loadingText: { color: C.faint, marginTop: 16, fontSize: 13 },
   placeholder: {
     color: C.faint,
     textAlign: "center",
     marginTop: 40,
     fontSize: 14,
   },
-  errorText: { color: C.danger, marginTop: 10, fontSize: 14, textAlign: 'center' },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    backgroundColor: "#3A172344",
+    borderColor: "#FF7A9B44",
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginVertical: 10,
+  },
+  errorText: { color: C.danger, fontSize: 13.5, flex: 1, fontWeight: "600" },
+  retryButton: {
+    backgroundColor: C.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  retryButtonText: { color: C.bg, fontSize: 12.5, fontWeight: "800" },
 });
-
-

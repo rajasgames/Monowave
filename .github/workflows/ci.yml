@@ -11,11 +11,11 @@ jobs:
     name: JS Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
       - run: npm ci
       - run: npm run typecheck
       - run: npm run test
@@ -24,11 +24,11 @@ jobs:
     name: Expo Integrity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
       - run: npm ci
       - run: npm run doctor
       - run: npm run check:native:verify
@@ -37,15 +37,15 @@ jobs:
     name: Android Clean Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      - uses: actions/setup-java@v3
+          node-version: "22"
+          cache: "npm"
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: "zulu"
+          java-version: "17"
       - run: npm ci
       - run: npm run prebuild:android
       - name: Build Android

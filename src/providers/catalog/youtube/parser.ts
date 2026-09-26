@@ -12,20 +12,61 @@ export function parseRuns(node: unknown): string {
     .trim();
 }
 
+export type RawThumbnail = {
+  url?: string;
+  width?: number;
+  height?: number;
+};
+
+export function selectLargestThumbnail(
+  choices?: RawThumbnail[] | null,
+): string | undefined {
+  if (!Array.isArray(choices) || choices.length === 0) return undefined;
+  const valid = choices.filter(
+    (c): c is RawThumbnail & { url: string } =>
+      typeof c?.url === "string" && c.url.trim().length > 0,
+  );
+  if (valid.length === 0) return undefined;
+
+  let best = valid[0];
+  let maxDim = (best.width ?? 0) * (best.height ?? 0);
+
+  for (let i = 1; i < valid.length; i++) {
+    const item = valid[i];
+    const itemDim = (item.width ?? 0) * (item.height ?? 0);
+    if (
+      itemDim > maxDim ||
+      (itemDim === maxDim && (item.width ?? 0) > (best.width ?? 0))
+    ) {
+      best = item;
+      maxDim = itemDim;
+    } else if (
+      maxDim === 0 &&
+      i === valid.length - 1 &&
+      !item.width &&
+      !item.height
+    ) {
+      best = item;
+    }
+  }
+
+  return best.url;
+}
+
 // Safely extract the highest quality thumbnail URL
 export function parseThumbnail(node: unknown): string | undefined {
   if (!node || typeof node !== "object") return undefined;
   const obj = node as {
     musicThumbnailRenderer?: {
-      thumbnail?: { thumbnails?: Array<{ url?: string }> };
+      thumbnail?: { thumbnails?: RawThumbnail[] };
     };
     thumbnailRenderer?: {
       musicThumbnailRenderer?: {
-        thumbnail?: { thumbnails?: Array<{ url?: string }> };
+        thumbnail?: { thumbnails?: RawThumbnail[] };
       };
     };
-    thumbnails?: Array<{ url?: string }>;
-    thumbnail?: { thumbnails?: Array<{ url?: string }> };
+    thumbnails?: RawThumbnail[];
+    thumbnail?: { thumbnails?: RawThumbnail[] };
   };
 
   const choices =
@@ -35,11 +76,7 @@ export function parseThumbnail(node: unknown): string | undefined {
     obj.thumbnail?.thumbnails ??
     [];
 
-  if (Array.isArray(choices) && choices.length > 0) {
-    const valid = choices.filter((c) => typeof c?.url === "string");
-    return valid.at(-1)?.url;
-  }
-  return undefined;
+  return selectLargestThumbnail(choices);
 }
 
 // Safely parse duration format (e.g. "3:45" or "1:15:30") to seconds

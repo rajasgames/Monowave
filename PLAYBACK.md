@@ -3,6 +3,7 @@
 Monowave relies on `expo-audio` paired with our custom `PlaybackEngine` and `StreamResolver`.
 
 ## Lifecycle
+
 1. User taps "Play".
 2. `PlaybackEngine` sets the player state to "loading".
 3. `StreamResolver` calls the native `StreamExtractorModule.resolve()`.

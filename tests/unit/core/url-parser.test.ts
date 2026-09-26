@@ -22,7 +22,9 @@ describe("parseLink", () => {
   });
 
   it("should prioritize list if URL contains both list and video id", () => {
-    const result = parseLink("https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLabc123");
+    const result = parseLink(
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLabc123",
+    );
     expect(result).toEqual({ kind: "playlist", id: "PLabc123" });
   });
 
@@ -38,6 +40,8 @@ describe("parseLink", () => {
 
   it("should return null for invalid video id", () => {
     expect(parseLink("https://www.youtube.com/watch?v=short")).toBeNull();
-    expect(parseLink("https://www.youtube.com/watch?v=toolongvideo")).toBeNull();
+    expect(
+      parseLink("https://www.youtube.com/watch?v=toolongvideo"),
+    ).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import { C } from "../ui/theme";
 import type { TabScreenProps } from "../navigation/types";
 import type { RecoSection } from "../services/recommendations";
 import type { Track } from "../music";
+import { useScreenContentPadding } from "../ui/utils";
 
 function DiscoverMixPanel({
   section,
@@ -20,7 +21,11 @@ function DiscoverMixPanel({
     .join(" · ");
   return (
     <Pressable
-      style={({ pressed }) => [styles.mixCard, pressed && { opacity: 0.72 }]}
+      style={({ pressed }) => [
+        styles.mixCard,
+        { transform: [{ scale: pressed ? 0.97 : 1 }] },
+        pressed && { opacity: 0.88 },
+      ]}
       onPress={() => onPlay(section.tracks[0], section.tracks)}
     >
       <View style={styles.mixGlow} />
@@ -42,10 +47,14 @@ function DiscoverMixPanel({
 export function HomeScreen({ navigation }: TabScreenProps<"Home">) {
   const { playTrack } = usePlayer();
   const { reco } = useRecos();
+  const contentPadding = useScreenContentPadding();
   const recommendations = reco?.sections ?? {};
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[styles.scroll, contentPadding]}
+    >
       <View style={styles.heroArea}>
         <View style={styles.heroOrbA} />
         <View style={styles.heroOrbB} />
@@ -53,7 +62,11 @@ export function HomeScreen({ navigation }: TabScreenProps<"Home">) {
       </View>
       <Pressable
         onPress={() => navigation.navigate("Search")}
-        style={styles.discoveryCard}
+        style={({ pressed }) => [
+          styles.discoveryCard,
+          { transform: [{ scale: pressed ? 0.97 : 1 }] },
+          pressed && { opacity: 0.88 },
+        ]}
       >
         <View style={styles.discoveryIcon}>
           <Compass size={29} color={C.text} weight="duotone" />
@@ -69,24 +82,33 @@ export function HomeScreen({ navigation }: TabScreenProps<"Home">) {
         .filter((r) => (r as RecoSection).tracks.length > 0)
         .map((r, index) =>
           index === 0 ? (
-            <DiscoverMixPanel key={index} section={r as RecoSection} onPlay={playTrack} />
+            <DiscoverMixPanel
+              key={index}
+              section={r as RecoSection}
+              onPlay={playTrack}
+            />
           ) : (
-            <SectionRail key={index} section={r as RecoSection} onPlay={playTrack} />
-          )
+            <SectionRail
+              key={index}
+              section={r as RecoSection}
+              onPlay={playTrack}
+            />
+          ),
         )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   heroArea: {
-    minHeight: 170,
+    minHeight: 160,
     justifyContent: "center",
     overflow: "hidden",
     marginHorizontal: -22,
     paddingHorizontal: 22,
-    marginTop: -14,
+    marginTop: 0,
+    marginBottom: 8,
   },
   heroOrbA: {
     position: "absolute",

@@ -22,7 +22,16 @@ export function TrackRow({
 }) {
   return (
     <View style={[styles.trackLine, card && styles.trackLineCard]}>
-      <Pressable style={styles.trackLineMain} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Play ${track.title} by ${track.artist}`}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.trackLineMain,
+          { transform: [{ scale: pressed ? 0.985 : 1 }] },
+          pressed && { opacity: 0.82 },
+        ]}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Play ${track.title} by ${track.artist}`}
+      >
         <Artwork uri={track.cover} size={56} />
         <View style={styles.trackText}>
           <Text numberOfLines={1} style={styles.trackTitle}>
@@ -35,7 +44,16 @@ export function TrackRow({
       </Pressable>
       {meta ? <Text style={styles.trackMeta}>{meta}</Text> : null}
       {onMore ? (
-        <Pressable hitSlop={12} onPress={onMore} style={styles.moreButton} accessibilityRole="button" accessibilityLabel="More options">
+        <Pressable
+          hitSlop={12}
+          onPress={onMore}
+          style={({ pressed }) => [
+            styles.moreButton,
+            { transform: [{ scale: pressed ? 0.86 : 1 }] },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
           {trailing ? (
             <Text style={styles.ellipsis}>{trailing}</Text>
           ) : (

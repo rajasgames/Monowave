@@ -29,7 +29,9 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
   const [actionTrack, setActionTrack] = useState<any>(null);
 
   return (
-    <PlayerContext.Provider value={{ ...monowave, actionTrack, setActionTrack }}>
+    <PlayerContext.Provider
+      value={{ ...monowave, actionTrack, setActionTrack }}
+    >
       <RecoContext.Provider value={recos}>{children}</RecoContext.Provider>
     </PlayerContext.Provider>
   );

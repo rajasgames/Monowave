@@ -24,7 +24,11 @@ export function SectionRail({
         {section.tracks.map((track, index) => (
           <Pressable
             key={`${track.id}-${index}`}
-            style={styles.railCard}
+            style={({ pressed }) => [
+              styles.railCard,
+              { transform: [{ scale: pressed ? 0.95 : 1 }] },
+              pressed && { opacity: 0.85 },
+            ]}
             onPress={() => onPlay(track, section.tracks)}
           >
             <View style={styles.railArtWrap}>

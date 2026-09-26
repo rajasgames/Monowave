@@ -5,13 +5,18 @@ import {
 import type { Candidate } from "../../../../src/services/recommendations/types";
 
 describe("diversity", () => {
-  const makeCandidate = (id: string, artistKey: string, score: number = 10, exploration: boolean = false): Candidate => ({
+  const makeCandidate = (
+    id: string,
+    artistKey: string,
+    score: number = 10,
+    exploration: boolean = false,
+  ): Candidate => ({
     track: { id, title: `Title ${id}`, artist: artistKey } as any,
     artistKey,
     score,
     exploration,
-    source: 'artist',
-    sourceLabel: 'Test',
+    source: "artist",
+    sourceLabel: "Test",
     seedRank: 0,
   });
 
@@ -22,7 +27,13 @@ describe("diversity", () => {
       const poolC = [makeCandidate("c1", "artC"), makeCandidate("c2", "artC")];
 
       const result = interleavePools([poolA, poolB, poolC]);
-      expect(result.map((c) => c.track.id)).toEqual(["a1", "b1", "c1", "a2", "c2"]);
+      expect(result.map((c) => c.track.id)).toEqual([
+        "a1",
+        "b1",
+        "c1",
+        "a2",
+        "c2",
+      ]);
     });
   });
 
@@ -34,13 +45,13 @@ describe("diversity", () => {
         makeCandidate("t3", "art3"),
         makeCandidate("t4", "art4"),
       ];
-      
+
       const result = applyDiversity(candidates, {
         excludeIds: new Set(["t2"]),
         seedIds: new Set(["t4"]),
       });
-      
-      expect(result.map(c => c.track.id)).toEqual(["t1", "t3"]);
+
+      expect(result.map((c) => c.track.id)).toEqual(["t1", "t3"]);
     });
 
     it("enforces maxPerArtist cap", () => {
@@ -51,10 +62,10 @@ describe("diversity", () => {
         makeCandidate("t4", "art"),
         makeCandidate("t5", "art"),
       ];
-      
+
       const result = applyDiversity(candidates, { maxPerArtist: 2 });
       expect(result.length).toBe(2);
-      expect(result.map(c => c.track.id)).toEqual(["t1", "t2"]);
+      expect(result.map((c) => c.track.id)).toEqual(["t1", "t2"]);
     });
   });
 });

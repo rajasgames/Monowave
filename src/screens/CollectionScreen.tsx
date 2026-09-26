@@ -7,13 +7,14 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { CaretLeft, CaretRight } from "phosphor-react-native";
+import { CaretLeft } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
 import { Artwork, Action, TrackRow as TrackLine } from "../ui/components";
 import { C } from "../ui/theme";
 import type { RootScreenProps } from "../navigation/types";
 import { browseMusic } from "../music";
 import type { SearchItem } from "../music";
+import { useScreenContentPadding } from "../ui/utils";
 
 export function CollectionScreen({
   route,
@@ -21,6 +22,7 @@ export function CollectionScreen({
 }: RootScreenProps<"Collection">) {
   const { playTrack, setActionTrack } = usePlayer();
   const { item } = route.params;
+  const contentPadding = useScreenContentPadding({ isModal: true });
 
   const [children, setChildren] = useState<SearchItem[]>([]);
   const [pending, setPending] = useState(true);
@@ -44,9 +46,11 @@ export function CollectionScreen({
     return () => {
       mounted = false;
     };
-  }, [item.id]);
+  }, [item.id, item.title]);
 
-  const tracksInCollection = children.flatMap((c) => (c.track ? [c.track] : []));
+  const tracksInCollection = children.flatMap((c) =>
+    c.track ? [c.track] : [],
+  );
   const collectionKind =
     item.kind === "artist"
       ? "artist"
@@ -59,10 +63,15 @@ export function CollectionScreen({
       data={children}
       keyExtractor={(child) => `${child.kind}:${child.id}`}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, contentPadding]}
       ListHeaderComponent={
         <>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <CaretLeft size={18} color={C.accent} weight="bold" />
               <Text style={styles.backButtonText}>Back</Text>
@@ -82,16 +91,16 @@ export function CollectionScreen({
             </View>
           </View>
 
-          {error ? (
-            <Text style={styles.errorText}>{error}</Text>
-          ) : null}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           {!!tracksInCollection.length ? (
             <Action
               label="Play all"
               active
               wide
-              onPress={() => playTrack(tracksInCollection[0], tracksInCollection)}
+              onPress={() =>
+                playTrack(tracksInCollection[0], tracksInCollection)
+              }
             />
           ) : null}
 
@@ -126,7 +135,7 @@ export function CollectionScreen({
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 22 },
   backButton: { marginBottom: 16 },
   backButtonText: {
     color: C.accent,
@@ -141,7 +150,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   collectionCopy: { flex: 1, justifyContent: "center" },
-  collectionTitle: { color: C.text, fontSize: 22, fontWeight: "900", marginTop: 4 },
+  collectionTitle: {
+    color: C.text,
+    fontSize: 22,
+    fontWeight: "900",
+    marginTop: 4,
+  },
   collectionSubtitle: {
     color: C.muted,
     fontSize: 14,
@@ -155,7 +169,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   loadingText: { color: C.faint, marginTop: 16, fontSize: 13 },
-  errorText: { color: C.danger, marginTop: 10, fontSize: 14, textAlign: 'center' },
+  errorText: {
+    color: C.danger,
+    marginTop: 10,
+    fontSize: 14,
+    textAlign: "center",
+  },
 });
-
-
