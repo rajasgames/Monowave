@@ -9,11 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Release
+  build:
+    name: Build (${{ matrix.arch }})
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     strategy:
       matrix:
         arch: [arm64-v8a, armeabi-v7a, x86_64, x86]
@@ -48,9 +46,29 @@ jobs:
           APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           mv "$APK_PATH" monowave-${{ matrix.arch }}.apk
 
-      - name: Upload Release Asset
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks-${{ matrix.arch }}
+          path: monowave-${{ matrix.arch }}.apk
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-apks
+          merge-multiple: true
+
+      - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          files: monowave-${{ matrix.arch }}.apk
+          files: release-apks/*.apk
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
