@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bindRecoStorageToAsyncStorage } from './services/recommendations/asyncStorageKV';
-import { generateRecommendations } from './services/recommendations';
+import { generateRecommendations, subscribeSignals } from './services/recommendations';
 import type { RecoResult } from './services/recommendations';
 import type { useMonowave } from './useMonowave';
 
@@ -22,18 +22,32 @@ export type RecoState = {
 export function useRecommendations(app: UseMonowaveReturn) {
   const { data, ready } = app;
   const [state, setState] = useState<RecoState>({ result: null, refreshing: false, error: null });
+  const [signalRevision, setSignalRevision] = useState(0);
   const dataRef = useRef(data);
   dataRef.current = data;
   const running = useRef(false);
-  const pendingRefresh = useRef(false);
+  const pendingRun = useRef(false);
+  const pendingManual = useRef(false);
   const bound = useRef(false);
 
-  // Inputs that should trigger regeneration. Notably NOT the whole queue
-  // (transient playback state) and not position/duration (would re-run constantly).
-  const inputsKey = `${ready}:${data.history.length}:${data.liked.length}:${data.playlists.length}`;
+  // Track actual taste inputs rather than only array lengths. This catches
+  // same-length mutations (a replaced like, rotated capped history, playlist edits).
+  // Queue/position/duration stay excluded because they are transient playback state.
+  const inputsKey = JSON.stringify([
+    ready,
+    signalRevision,
+    data.history.map(entry => [entry.track.id, entry.playedAt]),
+    data.liked.map(track => track.id),
+    data.playlists.map(list => [list.id, list.tracks.map(track => track.id)]),
+  ]);
 
   const regenerate = useCallback(async (manual: boolean) => {
-    if (!ready || running.current) { pendingRefresh.current = manual; return; }
+    if (!ready) return;
+    if (running.current) {
+      pendingRun.current = true;
+      pendingManual.current = pendingManual.current || manual;
+      return;
+    }
     running.current = true;
     if (manual) setState(previous => ({ ...previous, refreshing: true }));
     try {
@@ -53,9 +67,11 @@ export function useRecommendations(app: UseMonowaveReturn) {
       }));
     } finally {
       running.current = false;
-      if (pendingRefresh.current) {
-        pendingRefresh.current = false;
-        void regenerate(true);
+      if (pendingRun.current) {
+        const manualPending = pendingManual.current;
+        pendingRun.current = false;
+        pendingManual.current = false;
+        void regenerate(manualPending);
       }
     }
   }, [ready]);
@@ -66,6 +82,10 @@ export function useRecommendations(app: UseMonowaveReturn) {
       bindRecoStorageToAsyncStorage();
     }
   }, []);
+
+  useEffect(() => subscribeSignals(() => {
+    setSignalRevision(revision => revision + 1);
+  }), []);
 
   useEffect(() => {
     if (!ready) return;

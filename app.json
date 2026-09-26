@@ -2,7 +2,7 @@
   "expo": {
     "name": "Monowave",
     "slug": "monowave-player",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "scheme": "monowave",
     "platforms": [
       "android"
@@ -13,7 +13,7 @@
     "backgroundColor": "#080812",
     "android": {
       "versionCode": 1,
-      "package": "com.example.monowaveplayer",
+      "package": "com.rajasgames.monowave",
       "permissions": [
         "INTERNET",
         "WAKE_LOCK",
@@ -35,7 +35,8 @@
         }
       ],
       "./plugins/withJitPack",
-      "./plugins/withDesugaring"
+      "./plugins/withDesugaring",
+      "expo-asset"
     ]
   }
 }

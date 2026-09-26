@@ -46,21 +46,46 @@ export function buildTasteProfile(library: LibrarySnapshot, signals: BehaviorEve
     artist.plays += 1;
     artist.lastPlayedAt = artist.lastPlayedAt === null ? entry.playedAt : Math.max(artist.lastPlayedAt, entry.playedAt);
   }
-  // Distinct tracks per artist (after all plays are registered).
+  // Likes come straight from the library's liked list (most recent first).
+  const likedTracks: Track[] = [];
+  for (const track of library.liked) {
+    if (!track?.id || likedTracks.some(liked => liked.id === track.id)) continue;
+    likedTracks.push(track);
+    const stats = ensureTrack(track);
+    stats.liked = true;
+    const artist = ensureArtist(track.artist);
+    artist.likes += 1;
+  }
+
+  // Current playlist membership is a durable preference signal, including
+  // imported/restored playlists that have no historical playlist_add event.
+  const playlistTracks: Track[] = [];
+  for (const list of library.playlists) {
+    for (const track of list.tracks) {
+      if (!track?.id || playlistTracks.some(saved => saved.id === track.id)) continue;
+      playlistTracks.push(track);
+      const stats = ensureTrack(track);
+      stats.playlistAdds += 1;
+      const artist = ensureArtist(track.artist);
+      artist.playlistAdds += 1;
+    }
+  }
+
+  // Distinct tracks per artist should include history, likes, and playlists.
   for (const track of trackObjects.values()) {
     const stats = artistStats.get(toKey(track.artist));
     if (stats) stats.distinctTracks += 1;
   }
 
-  // Behavior signals refine the picture.
-  let lastSignalAt = 0;
+  // Behavior signals refine the library-derived picture. Library sources are
+  // registered first so signals for liked/playlist-only tracks are not lost.
   for (const event of signals) {
-    if (event.at > lastSignalAt) lastSignalAt = event.at;
     if (event.type === 'search') continue; // handled below
     if (!event.trackId) continue;
     const stats = trackStats.get(event.trackId);
-    if (!stats) continue; // track never made it into history (e.g. failed resolve): ignore
-    const artist = artistStats.get(toKey(event.artist ?? ''));
+    if (!stats) continue; // unknown track (for example a failed resolve): ignore
+    const knownTrack = trackObjects.get(event.trackId);
+    const artist = artistStats.get(toKey(event.artist ?? knownTrack?.artist ?? ''));
     if (event.type === 'complete') {
       stats.completes += 1;
       if (artist) artist.completes += 1;
@@ -82,17 +107,6 @@ export function buildTasteProfile(library: LibrarySnapshot, signals: BehaviorEve
     if (stats) stats.avgPlayFraction = fractions.count ? fractions.sum / fractions.count : null;
   }
 
-  // Likes come straight from the library's liked list (most recent first).
-  const likedTracks: Track[] = [];
-  for (const track of library.liked) {
-    if (!track?.id || likedTracks.some(liked => liked.id === track.id)) continue;
-    likedTracks.push(track);
-    const stats = ensureTrack(track);
-    stats.liked = true;
-    const artist = ensureArtist(track.artist);
-    artist.likes += 1;
-  }
-
   const searchTerms: { term: string; at: number }[] = [];
   for (const event of signals) {
     if (event.type !== 'search' || !event.term) continue;
@@ -109,10 +123,11 @@ export function buildTasteProfile(library: LibrarySnapshot, signals: BehaviorEve
     .sort((a, b) => b.affinity - a.affinity || (b.stats.lastPlayedAt ?? 0) - (a.stats.lastPlayedAt ?? 0))
     .map(entry => entry.stats);
 
-  // Seed tracks: likes first (strongest explicit signal), then most-completed, then repeat listens.
+  // Seed tracks: likes first, then playlist saves, completions, and repeat listens.
   const seeds: Track[] = [];
   const pushSeed = (track: Track) => { if (track?.id && !seeds.some(seed => seed.id === track.id)) seeds.push(track); };
   likedTracks.slice(0, 3).forEach(pushSeed);
+  playlistTracks.slice(0, 3).forEach(pushSeed);
   const completionsFirst = [...trackStats.entries()]
     .filter(([, stats]) => stats.completes > 0)
     .sort((a, b) =>
@@ -125,18 +140,22 @@ export function buildTasteProfile(library: LibrarySnapshot, signals: BehaviorEve
     .sort((a, b) => (b[1].lastPlayedAt ?? 0) - (a[1].lastPlayedAt ?? 0));
   for (const [id] of repeatsFirst) { if (seeds.length >= 6) break; const track = trackObjects.get(id); if (track) pushSeed(track); }
 
+  const savedStrongTracks = new Set([
+    ...likedTracks.map(track => track.id),
+    ...playlistTracks.map(track => track.id),
+  ]);
   const strongSignalCount =
-    likedTracks.length
+    savedStrongTracks.size
     + [...trackStats.values()].reduce((sum, stats) => sum + stats.completes, 0)
     + [...trackStats.values()].filter(stats => stats.plays > 1).length;
 
-  // Deterministic profile version: changes whenever any input changes.
+  // Deterministic profile version: include the actual values that affect taste,
+  // not just collection lengths/ids, so cache invalidation follows real changes.
   const versionInput = JSON.stringify([
-    library.history.map(entry => entry?.track?.id ?? ''),
-    library.liked.map(track => track?.id ?? ''),
-    library.playlists.map(list => list.tracks.map(track => track?.id ?? '').join(',')),
-    signals.length,
-    lastSignalAt,
+    library.history.map(entry => [entry?.track?.id ?? '', entry?.track?.artist ?? '', entry?.playedAt ?? 0]),
+    library.liked.map(track => [track?.id ?? '', track?.artist ?? '']),
+    library.playlists.map(list => [list.id, list.tracks.map(track => [track?.id ?? '', track?.artist ?? ''])]),
+    signals.map(event => [event.at, event.type, event.trackId ?? '', event.artist ?? '', event.title ?? '', event.fraction ?? null, event.term ?? '']),
   ]);
   const version = `${stableHash(versionInput).toString(36)}-${library.history.length}-${library.liked.length}`;
 

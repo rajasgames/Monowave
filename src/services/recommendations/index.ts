@@ -4,7 +4,7 @@
  * engine stays free of React Native imports (Node-testable). The app binds
  * storage in src/useRecommendations.ts via bindRecoStorageToAsyncStorage().
  */
-export { initSignals, getSignals, recordComplete, recordSkip, recordSearch, recordPlaylistAdd } from './signals';
+export { initSignals, getSignals, subscribeSignals, recordComplete, recordSkip, recordSearch, recordPlaylistAdd } from './signals';
 export { initCache, getCached, putCached, clearCache, TTL } from './cache';
 export { buildTasteProfile } from './profile';
 export { scoreCandidate, artistAffinity, trackAffinity, artistKey, WEIGHTS } from './scoring';

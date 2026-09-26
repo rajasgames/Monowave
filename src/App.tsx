@@ -20,6 +20,8 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { browseMusic, parseLink, searchMusic, trackById } from './music';
 import type { SearchItem, Track } from './music';
 import { useMonowave } from './useMonowave';
@@ -303,7 +305,7 @@ function MiniPlayer({
 }) {
   const progress = Math.min(100, duration ? (position / duration) * 100 : 0);
   return (
-    <View style={styles.miniPlayerShell}>
+    <BlurView intensity={60} tint="dark" style={styles.miniPlayerShell}>
       <View style={styles.miniProgress}><View style={[styles.miniProgressFill, { width: `${progress}%` }]} /></View>
       <Pressable onPress={onOpen} style={styles.miniPlayerMain}>
         <Artwork uri={track.cover} size={46} radius={11} />
@@ -314,7 +316,7 @@ function MiniPlayer({
       </Pressable>
       <Pressable onPress={onToggle} hitSlop={8} style={styles.miniControl}><Text style={styles.miniControlText}>{playing ? <Pause size={20} color={C.text} weight="fill" /> : <Play size={20} color={C.text} weight="fill" />}</Text></Pressable>
       <Pressable onPress={onLike} hitSlop={8} style={styles.miniControl}><Text style={[styles.miniHeart, liked && { color: C.accent }]}>{liked ? <Heart size={22} color={C.accent} weight="fill" /> : <Heart size={22} color={C.muted} />}</Text></Pressable>
-    </View>
+    </BlurView>
   );
 }
 
@@ -326,23 +328,22 @@ function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: MainTab)
     { key: 'history', icon: 'history', label: 'History' },
   ];
   return (
-    <View style={styles.tabbar}>
+    <BlurView intensity={70} tint="dark" style={styles.tabbar}>
       {items.map(item => {
         const selected = active === item.key;
         return (
           <Pressable key={item.key} onPress={() => onChange(item.key)} style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
             <Text style={[styles.tabIcon, selected && styles.tabIconActive]}>
-              {item.key === 'home' && <House size={24} color={selected ? C.accent : C.faint} weight={selected ? 'fill' : 'regular'} />}
-              {item.key === 'search' && <MagnifyingGlass size={24} color={selected ? C.accent : C.faint} weight={selected ? 'bold' : 'regular'} />}
-              {item.key === 'library' && <MusicNotes size={24} color={selected ? C.accent : C.faint} weight={selected ? 'fill' : 'regular'} />}
-              {item.key === 'history' && <Clock size={24} color={selected ? C.accent : C.faint} weight={selected ? 'fill' : 'regular'} />}
+              {item.key === 'home' && <House size={24} color={selected ? C.text : C.faint} weight={selected ? 'fill' : 'regular'} />}
+              {item.key === 'search' && <MagnifyingGlass size={24} color={selected ? C.text : C.faint} weight={selected ? 'bold' : 'regular'} />}
+              {item.key === 'library' && <MusicNotes size={24} color={selected ? C.text : C.faint} weight={selected ? 'fill' : 'regular'} />}
+              {item.key === 'history' && <Clock size={24} color={selected ? C.text : C.faint} weight={selected ? 'fill' : 'regular'} />}
             </Text>
-            <Text style={[styles.tabLabel, selected && styles.tabLabelActive]}>{item.label}</Text>
             {selected ? <View style={styles.tabIndicator} /> : null}
           </Pressable>
         );
       })}
-    </View>
+    </BlurView>
   );
 }
 
@@ -782,13 +783,11 @@ function Content() {
         {tab === 'player' && (
           <>
             <View style={styles.playerHeader}>
-              <Pressable onPress={() => setTab('home')} style={styles.backCircle}><CaretLeft size={24} color={C.text} weight="bold" /></Pressable>
-              <View style={{ alignItems: 'center' }}><Text style={styles.playerHeaderKicker}>NOW PLAYING</Text><Text style={styles.playerHeaderTitle}>Monowave</Text></View>
-              <Pressable onPress={() => current && setActionTrack(current)} style={styles.backCircle}><DotsThreeVertical size={24} color={C.text} weight="bold" /></Pressable>
+              <Pressable onPress={() => setTab('home')} hitSlop={12}><CaretLeft size={28} color={C.text} weight="bold" /></Pressable>
+              <Text style={styles.playerHeaderTitle}>Now Playing</Text>
+              <Pressable onPress={() => current && setActionTrack(current)} hitSlop={12}><DotsThreeVertical size={28} color={C.text} weight="bold" /></Pressable>
             </View>
-            <View style={styles.playerGlowA} />
-            <View style={styles.playerGlowB} />
-            <View style={styles.playerArt}><Artwork uri={current?.cover} size={292} radius={30} /></View>
+            <View style={styles.playerArt}><Artwork uri={current?.cover} size={310} radius={18} /></View>
             <Text style={styles.playerTitle} numberOfLines={2}>{current?.title ?? 'Nothing playing'}</Text>
             <Text style={styles.playerArtist}>{current?.artist}</Text>
 
@@ -800,31 +799,35 @@ function Content() {
             </View>
 
             <View style={styles.playerControls}>
-              <Pressable onPress={app.toggleShuffle} style={styles.secondaryControl}><Shuffle size={24} color={data.shuffle ? C.accent : C.muted} weight="bold" /></Pressable>
+              <Pressable onPress={app.toggleShuffle} style={styles.secondaryControl}><Shuffle size={24} color={data.shuffle ? C.text : C.muted} weight="bold" /></Pressable>
               <Pressable onPress={app.previous} style={styles.skipControl}><SkipBack size={32} color={C.text} weight="fill" /></Pressable>
-              <Pressable onPress={app.toggle} style={styles.mainPlayControl}><Text style={styles.mainPlayText}>{app.busy ? <ActivityIndicator color={C.bg} size="large" /> : app.playing ? <Pause size={32} color={C.bg} weight="fill" /> : <Play size={32} color={C.bg} weight="fill" />}</Text></Pressable>
+              <Pressable onPress={app.toggle} style={styles.mainPlayControl}>{app.busy ? <ActivityIndicator color={C.bg} size="large" /> : app.playing ? <Pause size={32} color={C.bg} weight="fill" /> : <Play size={32} color={C.bg} weight="fill" />}</Pressable>
               <Pressable onPress={app.next} style={styles.skipControl}><SkipForward size={32} color={C.text} weight="fill" /></Pressable>
-              <Pressable onPress={app.cycleRepeat} style={styles.secondaryControl}><Repeat size={24} color={data.repeat !== 'off' ? C.accent : C.muted} weight="bold" /></Pressable>
+              <Pressable onPress={app.cycleRepeat} style={styles.secondaryControl}><Repeat size={24} color={data.repeat !== 'off' ? C.text : C.muted} weight="bold" /></Pressable>
             </View>
 
             {!!current ? (
-              <Pressable onPress={() => app.like(current)} style={styles.likeNowPlaying}>
-                <Text style={[styles.likeNowPlayingIcon, data.liked.some(t => t.id === current.id) && { color: C.accent }]}>{data.liked.some(t => t.id === current.id) ? '♥' : '♡'}</Text>
-                <Text style={styles.likeNowPlayingText}>{data.liked.some(t => t.id === current.id) ? 'Liked' : 'Like this track'}</Text>
-              </Pressable>
+              <View style={styles.playerSecondaryActions}>
+                <Pressable onPress={() => app.like(current)} hitSlop={12}>
+                  {data.liked.some(t => t.id === current.id) ? <Heart size={26} color={C.accent} weight="fill" /> : <Heart size={26} color={C.muted} />}
+                </Pressable>
+                <Pressable onPress={() => setActionTrack(current)} hitSlop={12}><Plus size={26} color={C.muted} /></Pressable>
+                <Pressable onPress={() => setActionTrack(current)} hitSlop={12}><DotsThreeVertical size={26} color={C.muted} weight="bold" /></Pressable>
+              </View>
             ) : null}
 
-            <SectionHeader title="Up next" detail={`${data.queue.length} in queue`} />
+            <View style={styles.upNextHeader}>
+              <Text style={styles.upNextTitle}>Up Next <Text style={styles.upNextCount}>{data.queue.length}</Text></Text>
+            </View>
+
             {data.queue.map((track, index) => (
               <View key={`${track.id}:${index}`} style={[styles.queueLine, index === data.index && styles.queueLineActive]}>
-                <Text style={[styles.queueIndex, index === data.index && { color: C.accent }]}>{index === data.index ? <SpeakerHigh size={16} color={C.accent} weight="fill" /> : index + 1}</Text>
-                <Pressable style={{ flex: 1 }} onPress={() => void app.playAt(data.queue, index)}>
-                  <Text numberOfLines={1} style={styles.queueTitle}>{track.title}</Text>
+                {index === data.index ? <Waveform size={20} color={C.accent} weight="bold" /> : <Artwork uri={track.cover} size={44} radius={8} />}
+                <Pressable style={styles.queueMain} onPress={() => void app.playAt(data.queue, index)}>
+                  <Text numberOfLines={1} style={[styles.queueTitle, index === data.index && { color: C.accent, fontWeight: '700' }]}>{track.title}</Text>
                   <Text numberOfLines={1} style={styles.queueArtist}>{track.artist}</Text>
                 </Pressable>
-                <Pressable onPress={() => app.moveQueued(index, index - 1)}><ArrowUp size={20} color={C.accent} weight="bold" /></Pressable>
-                <Pressable onPress={() => app.moveQueued(index, index + 1)}><ArrowDown size={20} color={C.accent} weight="bold" /></Pressable>
-                <Pressable onPress={() => app.removeQueued(index)}><X size={20} color={C.accent} weight="bold" /></Pressable>
+                <Pressable hitSlop={12} onPress={() => app.removeQueued(index)}><X size={20} color={C.muted} weight="bold" /></Pressable>
               </View>
             ))}
           </>
@@ -1050,37 +1053,29 @@ const styles = StyleSheet.create({
   clearButtonText: { color: C.accent, fontSize: 12.5, fontWeight: '800' },
   historyList: { marginTop: 12 },
 
-  playerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  backCircle: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  backCircleText: { color: C.text, fontSize: 25, lineHeight: 28 },
-  playerHeaderKicker: { color: C.accent, fontSize: 9.5, letterSpacing: 1.5, fontWeight: '900' },
-  playerHeaderTitle: { color: C.text, fontSize: 13, fontWeight: '800', marginTop: 3 },
-  playerGlowA: { position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: '#8D3DFF25', top: 55, left: -100 },
-  playerGlowB: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: '#274BFF18', top: 120, right: -100 },
-  playerArt: { alignItems: 'center', marginTop: 18, marginBottom: 28 },
-  playerTitle: { color: C.text, fontWeight: '900', fontSize: 27, lineHeight: 33, textAlign: 'center', paddingHorizontal: 8 },
-  playerArtist: { color: C.muted, fontSize: 15, textAlign: 'center', marginTop: 8 },
-  progressArea: { marginTop: 32 },
-  progress: { height: 5, backgroundColor: '#FFFFFF16', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { backgroundColor: C.accent, height: 5, borderRadius: 3 },
-  progressLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  progressTime: { color: C.faint, fontSize: 11.5 },
-  playerControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 27 },
-  secondaryControl: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  secondaryControlText: { color: C.muted, fontSize: 24, fontWeight: '800' },
+  playerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, minHeight: 56, paddingHorizontal: 4 },
+  playerHeaderTitle: { color: C.text, fontSize: 16, fontWeight: '800' },
+  playerArt: { alignItems: 'center', marginTop: 12, marginBottom: 24 },
+  playerTitle: { color: C.text, fontWeight: '700', fontSize: 24, lineHeight: 30, textAlign: 'center', paddingHorizontal: 12 },
+  playerArtist: { color: C.muted, fontSize: 14, textAlign: 'center', marginTop: 6 },
+  progressArea: { marginTop: 32, paddingHorizontal: 4 },
+  progress: { height: 6, backgroundColor: '#FFFFFF16', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { backgroundColor: C.text, height: 6, borderRadius: 3 },
+  progressLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  progressTime: { color: C.faint, fontSize: 12, fontWeight: '600' },
+  playerControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 32, marginBottom: 24, paddingHorizontal: 8 },
+  secondaryControl: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   skipControl: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
-  skipControlText: { color: C.text, fontSize: 21, fontWeight: '900' },
-  mainPlayControl: { width: 76, height: 76, borderRadius: 38, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', shadowColor: C.accent, shadowOpacity: 0.35, shadowRadius: 22, elevation: 8 },
-  mainPlayText: { color: C.bg, fontSize: 27, fontWeight: '900', marginLeft: 2 },
-  likeNowPlaying: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 18, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
-  likeNowPlayingIcon: { color: C.muted, fontSize: 20 },
-  likeNowPlayingText: { color: C.text, fontSize: 12.5, fontWeight: '800' },
-  queueLine: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 8, borderRadius: 14, marginBottom: 4 },
-  queueLineActive: { backgroundColor: C.accentSoft },
-  queueIndex: { color: C.faint, width: 26, textAlign: 'center', fontSize: 12.5, fontWeight: '700' },
-  queueTitle: { color: C.text, fontSize: 13.5, fontWeight: '800' },
-  queueArtist: { color: C.muted, fontSize: 11.5, marginTop: 3 },
-  smallControl: { color: C.accent, fontSize: 18, paddingHorizontal: 5, paddingVertical: 6 },
+  mainPlayControl: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.text, alignItems: 'center', justifyContent: 'center' },
+  playerSecondaryActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', marginBottom: 32, paddingHorizontal: 24 },
+  upNextHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 16, paddingHorizontal: 4 },
+  upNextTitle: { color: C.text, fontSize: 18, fontWeight: '800' },
+  upNextCount: { color: C.faint, fontSize: 15, fontWeight: '600', marginLeft: 6 },
+  queueLine: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, marginBottom: 4 },
+  queueLineActive: { backgroundColor: '#FFFFFF0B' },
+  queueMain: { flex: 1, justifyContent: 'center' },
+  queueTitle: { color: C.text, fontSize: 15, fontWeight: '500' },
+  queueArtist: { color: C.muted, fontSize: 13, marginTop: 3 },
 
   settingsCard: { backgroundColor: C.panel, borderRadius: 22, borderWidth: 1, borderColor: C.line, padding: 16 },
   settingsLabel: { color: C.accent, fontSize: 10.5, fontWeight: '900', letterSpacing: 1.5, marginBottom: 10 },
@@ -1098,7 +1093,7 @@ const styles = StyleSheet.create({
   actionTextActive: { color: C.bg },
   actionTextDanger: { color: C.danger },
 
-  miniPlayerShell: { position: 'absolute', left: 14, right: 14, bottom: 76, minHeight: 68, flexDirection: 'row', alignItems: 'center', backgroundColor: '#19172EF4', borderRadius: 21, borderWidth: 1, borderColor: '#9D7CFF55', paddingHorizontal: 10, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 14, elevation: 9 },
+  miniPlayerShell: { position: 'absolute', left: 14, right: 14, bottom: 100, minHeight: 68, flexDirection: 'row', alignItems: 'center', backgroundColor: '#19172E80', borderRadius: 24, borderWidth: 1, borderColor: '#FFFFFF22', paddingHorizontal: 10, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 14, elevation: 9 },
   miniProgress: { position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: '#FFFFFF12' },
   miniProgressFill: { height: 2, backgroundColor: C.accent },
   miniPlayerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 9 },
@@ -1108,13 +1103,11 @@ const styles = StyleSheet.create({
   miniControlText: { color: C.text, fontSize: 18, fontWeight: '900' },
   miniHeart: { color: C.muted, fontSize: 22 },
 
-  tabbar: { height: 70, flexDirection: 'row', alignItems: 'stretch', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: '#090A16F8', paddingHorizontal: 4 },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, position: 'relative' },
+  tabbar: { position: 'absolute', bottom: 20, alignSelf: 'center', height: 64, width: '75%', borderRadius: 32, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', backgroundColor: '#090A16A0', borderWidth: 1, borderColor: '#FFFFFF15', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 20, elevation: 15 },
+  tab: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 20, position: 'relative' },
   tabIcon: { color: C.faint, fontSize: 20, fontWeight: '800' },
-  tabIconActive: { color: C.accent },
-  tabLabel: { color: C.faint, fontSize: 10.5, fontWeight: '700' },
-  tabLabelActive: { color: C.accent, fontWeight: '900' },
-  tabIndicator: { position: 'absolute', bottom: 3, width: 32, height: 3, borderRadius: 2, backgroundColor: C.accent },
+  tabIconActive: { color: C.text },
+  tabIndicator: { position: 'absolute', bottom: 6, width: 4, height: 4, borderRadius: 2, backgroundColor: C.text },
 
   errorBanner: { marginHorizontal: 14, marginBottom: 6, backgroundColor: '#3B1625', borderRadius: 14, borderWidth: 1, borderColor: '#FF7A9B44', paddingHorizontal: 13, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 10 },
   errorText: { flex: 1, color: '#FFD6E0', fontSize: 12.5, lineHeight: 17 },

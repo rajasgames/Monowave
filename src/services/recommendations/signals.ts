@@ -15,6 +15,7 @@ let events: BehaviorEvent[] = [];
 let loaded = false;
 let loading: Promise<void> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+const listeners = new Set<() => void>();
 
 function isValidEvent(value: unknown): value is BehaviorEvent {
   if (!value || typeof value !== 'object') return false;
@@ -45,6 +46,16 @@ export function getSignals(): BehaviorEvent[] {
   return [...events];
 }
 
+/** Lets UI consumers regenerate recommendations when behavior changes. */
+export function subscribeSignals(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+function notifyListeners(): void {
+  for (const listener of listeners) listener();
+}
+
 function persist(): void {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -56,6 +67,7 @@ function persist(): void {
 function append(event: BehaviorEvent): void {
   events = [...events.slice(-(MAX_EVENTS - 1)), event];
   persist();
+  notifyListeners();
 }
 
 export function recordComplete(track: { id: string; artist: string; title: string }): void {
@@ -89,10 +101,12 @@ export function recordPlaylistAdd(track: { id: string; artist: string; title: st
 export function resetSignals(): void {
   events = [];
   persist();
+  notifyListeners();
 }
 
 /** Test-only seam: replace the in-memory list (tests re-init afterwards). */
 export function __setSignalsForTests(next: BehaviorEvent[]): void {
   events = next.filter(isValidEvent);
   loaded = true;
+  notifyListeners();
 }
