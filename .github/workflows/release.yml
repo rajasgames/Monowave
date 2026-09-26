@@ -29,14 +29,19 @@ jobs:
         run: npm ci
 
       - name: Prebuild Android
-        run: npm run prebuild:android
+        run: npx expo prebuild --clean --platform android --no-install
 
       - name: Build Release APK
         working-directory: android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=${{ matrix.arch }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease -PreactNativeArchitectures=${{ matrix.arch }}
 
       - name: Rename APK
-        run: mv android/app/build/outputs/apk/release/app-release.apk monowave-${{ matrix.arch }}.apk
+        run: |
+          # Find the generated APK (could be app-release.apk or app-armeabi-v7a-release.apk)
+          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          mv "$APK_PATH" monowave-${{ matrix.arch }}.apk
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
