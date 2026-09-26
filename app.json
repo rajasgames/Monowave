@@ -32,7 +32,7 @@
           "recordAudioAndroid": false
         }
       ],
-      "./plugins/withSplitApks", "./plugins/withJitPack",
+      "./plugins/withJitPack",
       "./plugins/withDesugaring",
       "expo-asset"
     ]
