@@ -5,10 +5,15 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     name: Build & Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         arch: [arm64-v8a, armeabi-v7a, x86_64, x86]
@@ -44,7 +49,7 @@ jobs:
           mv "$APK_PATH" monowave-${{ matrix.arch }}.apk
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: monowave-${{ matrix.arch }}.apk
         env:
