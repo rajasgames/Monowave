@@ -30,3 +30,25 @@ export const INITIAL_LIBRARY_DATA: LibraryData = {
   repeatMode: "off",
   isShuffled: false,
 };
+
+export type PreferencesData = {
+  seekIntervalSeconds: number;
+  autoplay: boolean;
+  enableDiscoverMix: boolean;
+  displayName: string;
+};
+
+export const INITIAL_PREFERENCES_DATA: PreferencesData = {
+  seekIntervalSeconds: 10,
+  autoplay: true,
+  enableDiscoverMix: true,
+  displayName: "",
+};
+
+export type SearchHistoryData = {
+  terms: string[];
+};
+
+export const INITIAL_SEARCH_HISTORY_DATA: SearchHistoryData = {
+  terms: [],
+};

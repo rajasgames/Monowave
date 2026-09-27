@@ -63,8 +63,26 @@ export class StreamResolver {
 
     throw createAppError(
       "source_unavailable",
-      `No compatible stream source found for provider: ${track.provider}`,
+      `No compatible stream source found for provider: ${track.provider || "youtube"}`,
     );
+  }
+
+  async resolveWithRetry(
+    track: Track,
+    forceRefresh: boolean = false,
+    signal?: AbortSignal,
+  ): Promise<ResolvedStream> {
+    if (forceRefresh) {
+      this.invalidate(track.id);
+    }
+    try {
+      return await this.resolve(track, signal);
+    } catch (firstError) {
+      if (signal?.aborted) throw firstError;
+      // Invalidate and retry once for transient or expired errors
+      this.invalidate(track.id);
+      return await this.resolve(track, signal);
+    }
   }
 
   invalidate(trackId: string): void {

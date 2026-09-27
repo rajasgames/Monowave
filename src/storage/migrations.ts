@@ -203,3 +203,63 @@ export function createPersistedEnvelope<T>(data: T): PersistedEnvelope<T> {
     data,
   };
 }
+
+export function migratePreferencesPayload(
+  rawJson: string | null,
+): import("./schemas").PreferencesData {
+  const { INITIAL_PREFERENCES_DATA } = require("./schemas");
+  if (!rawJson) return { ...INITIAL_PREFERENCES_DATA };
+  try {
+    const parsed = JSON.parse(rawJson);
+    const data = parsed?.schemaVersion && parsed?.data ? parsed.data : parsed;
+    return {
+      seekIntervalSeconds:
+        typeof data?.seekIntervalSeconds === "number" &&
+        data.seekIntervalSeconds > 0
+          ? data.seekIntervalSeconds
+          : INITIAL_PREFERENCES_DATA.seekIntervalSeconds,
+      autoplay:
+        typeof data?.autoplay === "boolean"
+          ? data.autoplay
+          : INITIAL_PREFERENCES_DATA.autoplay,
+      enableDiscoverMix:
+        typeof data?.enableDiscoverMix === "boolean"
+          ? data.enableDiscoverMix
+          : INITIAL_PREFERENCES_DATA.enableDiscoverMix,
+      displayName:
+        typeof data?.displayName === "string"
+          ? data.displayName
+          : INITIAL_PREFERENCES_DATA.displayName,
+    };
+  } catch {
+    return { ...INITIAL_PREFERENCES_DATA };
+  }
+}
+
+export function migrateSearchHistoryPayload(rawJson: string | null): string[] {
+  if (!rawJson) return [];
+  try {
+    const parsed = JSON.parse(rawJson);
+    const rawList = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed?.data?.terms)
+        ? parsed.data.terms
+        : Array.isArray(parsed?.terms)
+          ? parsed.terms
+          : [];
+    const seen = new Set<string>();
+    const cleaned: string[] = [];
+    for (const item of rawList) {
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        if (trimmed && !seen.has(trimmed)) {
+          seen.add(trimmed);
+          cleaned.push(trimmed);
+        }
+      }
+    }
+    return cleaned.slice(0, 20);
+  } catch {
+    return [];
+  }
+}

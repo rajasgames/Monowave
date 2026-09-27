@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  Alert,
+  StyleSheet,
+} from "react-native";
 import { Clock } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
 import { ScreenTitle, TrackRow as TrackLine } from "../ui/components";
@@ -10,6 +17,21 @@ import type { TabScreenProps } from "../navigation/types";
 export function HistoryScreen({ navigation }: TabScreenProps<"History">) {
   const { data, clearHistory, playTrack, setActionTrack } = usePlayer();
   const contentPadding = useScreenContentPadding();
+
+  const confirmClearHistory = () => {
+    Alert.alert(
+      "Clear History",
+      "Are you sure you want to clear your listening history? This will also reset your recent playback signals for Discover Mix.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: clearHistory,
+        },
+      ],
+    );
+  };
 
   return (
     <FlatList
@@ -24,13 +46,18 @@ export function HistoryScreen({ navigation }: TabScreenProps<"History">) {
             detail={`${data.history.length} listens · Recently played tracks`}
           />
           {!!data.history.length ? (
-            <Pressable onPress={clearHistory} style={styles.clearButton}>
+            <Pressable
+              onPress={confirmClearHistory}
+              style={styles.clearButton}
+              accessibilityRole="button"
+              accessibilityLabel="Clear listening history"
+            >
               <Text style={styles.clearButtonText}>⌫ Clear all</Text>
             </Pressable>
           ) : null}
         </View>
       }
-      renderItem={({ item, index }) => (
+      renderItem={({ item }) => (
         <View style={{ marginBottom: 10 }}>
           <TrackLine
             track={item.track}
@@ -58,7 +85,6 @@ export function HistoryScreen({ navigation }: TabScreenProps<"History">) {
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 22 },
-
   historyTitleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -74,7 +100,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   clearButtonText: { color: C.danger, fontWeight: "700", fontSize: 13 },
-  historyList: { gap: 10, marginTop: 16 },
   emptyStateCard: {
     alignItems: "center",
     padding: 30,

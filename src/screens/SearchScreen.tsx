@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
 import { MagnifyingGlass, CaretRight } from "phosphor-react-native";
 import { usePlayer } from "../state/PlayerContext";
+import { defaultSearchHistoryRepository } from "../storage/searchHistoryRepository";
 import {
   ScreenTitle,
   SearchBox,
@@ -67,26 +67,12 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
   const lastTapTimeRef = useRef(0);
 
   useEffect(() => {
-    AsyncStorage.getItem("monowave-search-history").then((val) => {
-      if (val) {
-        try {
-          setHistory(JSON.parse(val));
-        } catch {}
-      }
-    });
+    void defaultSearchHistoryRepository.load().then(setHistory);
+    return defaultSearchHistoryRepository.subscribe(setHistory);
   }, []);
 
   const saveHistory = (term: string) => {
-    const clean = term.trim();
-    if (!clean) return;
-    setHistory((prev) => {
-      const next = [clean, ...prev.filter((t) => t !== clean)].slice(0, 20);
-      void AsyncStorage.setItem(
-        "monowave-search-history",
-        JSON.stringify(next),
-      );
-      return next;
-    });
+    void defaultSearchHistoryRepository.add(term);
   };
 
   const handleQueryChange = (text: string) => {
@@ -349,9 +335,12 @@ export function SearchScreen({ navigation }: TabScreenProps<"Search">) {
           track={
             item.track ?? {
               id: item.id,
+              provider: "youtube",
+              sourceId: item.id,
               title: item.title,
               artist: item.subtitle,
               cover: item.cover,
+              artwork: item.cover,
             }
           }
           onPress={() =>

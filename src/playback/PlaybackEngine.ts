@@ -26,6 +26,7 @@ export class PlaybackEngine {
   // Race condition token guard
   private loadGeneration = 0;
   private currentAbortController: AbortController | null = null;
+  private retriedCurrentTrack = false;
 
   // Track completion / skip state
   private loadedTrackId: string | null = null;
@@ -77,13 +78,25 @@ export class PlaybackEngine {
       this.positionSeconds = update.currentTime;
     }
     if (typeof update.duration === "number") {
-      this.durationSeconds = update.duration;
+      this.durationSeconds =
+        update.duration ||
+        this.currentTrack?.durationSeconds ||
+        this.currentTrack?.duration ||
+        0;
     }
     if (typeof update.buffered === "number") {
       this.bufferedSeconds = update.buffered;
     }
 
     if (update.error) {
+      // If we encounter a playback error and haven't retried this track, attempt one refresh
+      if (!this.retriedCurrentTrack && this.currentTrack) {
+        this.retriedCurrentTrack = true;
+        this.resolver.invalidate(this.currentTrack.id);
+        void this.play(this.currentTrack).catch(() => {});
+        return;
+      }
+
       this.status = "error";
       this.currentError = createAppError("unknown", "Audio playback error", {
         technicalMessage: String(update.error),
@@ -147,8 +160,9 @@ export class PlaybackEngine {
     this.status = "loading";
     this.currentError = null;
     this.positionSeconds = 0;
-    this.durationSeconds = track.durationSeconds ?? 0;
+    this.durationSeconds = track.durationSeconds ?? track.duration ?? 0;
     this.isCompleting = false;
+    this.retriedCurrentTrack = false;
     this.notifyState();
 
     try {
@@ -177,7 +191,7 @@ export class PlaybackEngine {
           {
             title: track.title,
             artist: track.artist,
-            artworkUrl: track.artwork,
+            artworkUrl: track.artwork || track.cover,
           },
           { showSeekBackward: true, showSeekForward: true },
         );
@@ -190,6 +204,32 @@ export class PlaybackEngine {
       this.notifyState();
     } catch (err: unknown) {
       if (generation !== this.loadGeneration) return;
+
+      // Automatic retry once for playback failure
+      if (!this.retriedCurrentTrack) {
+        this.retriedCurrentTrack = true;
+        this.resolver.invalidate(track.id);
+        try {
+          const freshStream = await this.resolver.resolve(
+            track,
+            this.currentAbortController.signal,
+          );
+          if (generation !== this.loadGeneration) return;
+          player.replace({
+            uri: freshStream.url,
+            headers: freshStream.userAgent
+              ? { "User-Agent": freshStream.userAgent }
+              : undefined,
+          });
+          this.loadedTrackId = track.id;
+          player.play();
+          this.status = "playing";
+          this.notifyState();
+          return;
+        } catch {
+          /* Retry failed: proceed to set structured error */
+        }
+      }
 
       this.status = "error";
       this.currentError = isAppError(err)
@@ -204,7 +244,10 @@ export class PlaybackEngine {
   }
 
   pause(): void {
-    if (this.player && this.status === "playing") {
+    if (
+      this.player &&
+      (this.status === "playing" || this.status === "loading")
+    ) {
       this.player.pause();
       this.status = "paused";
       this.notifyState();
@@ -221,10 +264,18 @@ export class PlaybackEngine {
 
   async seek(seconds: number): Promise<void> {
     if (this.player) {
-      await this.player.seekTo(seconds);
-      this.positionSeconds = seconds;
+      const target = Math.max(
+        0,
+        Math.min(this.durationSeconds || 999999, seconds),
+      );
+      await this.player.seekTo(target);
+      this.positionSeconds = target;
       this.notifyState();
     }
+  }
+
+  async seekBy(deltaSeconds: number): Promise<void> {
+    await this.seek(this.positionSeconds + deltaSeconds);
   }
 
   stop(): void {

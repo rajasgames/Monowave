@@ -1,10 +1,7 @@
-export type Track = {
-  id: string;
-  title: string;
-  artist: string;
-  cover?: string;
-  duration?: number;
-};
+import type { Track as CoreTrack } from "./core/types";
+
+export type Track = CoreTrack;
+
 export type SearchItem = {
   id: string;
   kind: "track" | "album" | "artist" | "playlist";
@@ -140,12 +137,17 @@ function row(renderer: any): SearchItem | null {
         .split(" • ")
         .find((x: string) => x && !/^song$|^video$/i.test(x)) ||
       "Unknown artist";
+    const dur = seconds(secondary.split(" • ").at(-1) ?? "");
     const track: Track = {
       id: videoId,
+      provider: "youtube",
+      sourceId: videoId,
       title,
       artist,
       cover,
-      duration: seconds(secondary.split(" • ").at(-1) ?? ""),
+      artwork: cover,
+      duration: dur,
+      durationSeconds: dur,
     };
     return {
       id: videoId,
@@ -198,12 +200,17 @@ function extract(json: any): SearchItem[] {
           runs(renderer?.shortBylineText) ||
           runs(renderer?.longBylineText) ||
           "Unknown artist";
+        const dur = seconds(runs(renderer?.lengthText));
         const track: Track = {
           id,
+          provider: "youtube",
+          sourceId: id,
           title,
           artist,
           cover: thumb(renderer?.thumbnail),
-          duration: seconds(runs(renderer?.lengthText)),
+          artwork: thumb(renderer?.thumbnail),
+          duration: dur,
+          durationSeconds: dur,
         };
         return {
           id,
@@ -240,7 +247,13 @@ export async function trackById(id: string): Promise<Track> {
   const response = await request("next", { videoId: id, isAudioOnly: true });
   return (
     extract(response).find((item) => item.kind === "track" && item.id === id)
-      ?.track ?? { id, title: `YouTube track ${id}`, artist: "Unknown artist" }
+      ?.track ?? {
+      id,
+      provider: "youtube",
+      sourceId: id,
+      title: `YouTube track ${id}`,
+      artist: "Unknown artist",
+    }
   );
 }
 

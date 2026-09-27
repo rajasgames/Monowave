@@ -1,4 +1,4 @@
-name: Release APKs
+name: Production Release
 
 on:
   push:
@@ -9,12 +9,34 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build (${{ matrix.arch }})
+  validate-signing:
+    name: Verify Production Signing Secrets
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64-v8a, armeabi-v7a, x86_64, x86]
+    steps:
+      - name: Assert Required Secrets
+        run: |
+          if [ -z "${{ secrets.MONOWAVE_RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::CRITICAL: MONOWAVE_RELEASE_KEYSTORE_BASE64 secret is not configured in repository settings. Release aborted to prevent unsigned or debug-signed releases."
+            exit 1
+          fi
+          if [ -z "${{ secrets.MONOWAVE_RELEASE_KEYSTORE_PASSWORD }}" ]; then
+            echo "::error::CRITICAL: MONOWAVE_RELEASE_KEYSTORE_PASSWORD secret is missing."
+            exit 1
+          fi
+          if [ -z "${{ secrets.MONOWAVE_RELEASE_KEY_ALIAS }}" ]; then
+            echo "::error::CRITICAL: MONOWAVE_RELEASE_KEY_ALIAS secret is missing."
+            exit 1
+          fi
+          if [ -z "${{ secrets.MONOWAVE_RELEASE_KEY_PASSWORD }}" ]; then
+            echo "::error::CRITICAL: MONOWAVE_RELEASE_KEY_PASSWORD secret is missing."
+            exit 1
+          fi
+          echo "All production signing secrets verified."
+
+  build-apks:
+    name: Build Signed Release APKs
+    needs: validate-signing
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -27,48 +49,116 @@ jobs:
         with:
           distribution: "zulu"
           java-version: "17"
+          cache: "gradle"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Prebuild Android
-        run: npx expo prebuild --clean --platform android --no-install
+      - name: Verify Quality Gates Before Release
+        run: |
+          npm run typecheck
+          npm run test:ci
+          npm run doctor
 
-      - name: Build Release APK
+      - name: Clean Android Prebuild
+        run: npm run prebuild:android
+
+      - name: Prepare Production Keystore
+        run: |
+          echo "${{ secrets.MONOWAVE_RELEASE_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          chmod 600 android/app/release.keystore
+
+      - name: Build Universal Release APK
         working-directory: android
+        env:
+          MONOWAVE_RELEASE_KEYSTORE_PATH: ${{ github.workspace }}/android/app/release.keystore
+          MONOWAVE_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.MONOWAVE_RELEASE_KEYSTORE_PASSWORD }}
+          MONOWAVE_RELEASE_KEY_ALIAS: ${{ secrets.MONOWAVE_RELEASE_KEY_ALIAS }}
+          MONOWAVE_RELEASE_KEY_PASSWORD: ${{ secrets.MONOWAVE_RELEASE_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease -PreactNativeArchitectures=${{ matrix.arch }}
+          ./gradlew assembleRelease --no-daemon
+          mkdir -p ../dist-apks
+          cp app/build/outputs/apk/release/app-release.apk ../dist-apks/monowave-universal.apk
 
-      - name: Rename APK
+      - name: Build Architecture-Specific Release APKs
+        working-directory: android
+        env:
+          MONOWAVE_RELEASE_KEYSTORE_PATH: ${{ github.workspace }}/android/app/release.keystore
+          MONOWAVE_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.MONOWAVE_RELEASE_KEYSTORE_PASSWORD }}
+          MONOWAVE_RELEASE_KEY_ALIAS: ${{ secrets.MONOWAVE_RELEASE_KEY_ALIAS }}
+          MONOWAVE_RELEASE_KEY_PASSWORD: ${{ secrets.MONOWAVE_RELEASE_KEY_PASSWORD }}
         run: |
-          # Find the generated APK (could be app-release.apk or app-armeabi-v7a-release.apk)
-          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          mv "$APK_PATH" monowave-${{ matrix.arch }}.apk
+          for ARCH in arm64-v8a armeabi-v7a x86_64; do
+            echo "Building for $ARCH..."
+            ./gradlew assembleRelease -PreactNativeArchitectures=$ARCH --no-daemon
+            APK_SRC=$(find app/build/outputs/apk/release -name "*.apk" | grep -v "app-release.apk" | head -n 1)
+            if [ -z "$APK_SRC" ]; then
+              APK_SRC="app/build/outputs/apk/release/app-release.apk"
+            fi
+            cp "$APK_SRC" "../dist-apks/monowave-$ARCH.apk"
+          done
 
-      - name: Upload APK Artifact
+      - name: Remove Keystore File
+        if: always()
+        run: rm -f android/app/release.keystore
+
+      - name: Verify APKs and Generate SHA-256 Checksums
+        working-directory: dist-apks
+        run: |
+          echo "=== Release Artifacts & Sizes ==="
+          ls -lh *.apk
+          for f in *.apk; do
+            if [ ! -s "$f" ]; then
+              echo "::error::Release APK $f is empty or missing!"
+              exit 1
+            fi
+          done
+          sha256sum *.apk > SHA256SUMS.txt
+          echo "=== SHA-256 Checksums ==="
+          cat SHA256SUMS.txt
+
+      - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: apks-${{ matrix.arch }}
-          path: monowave-${{ matrix.arch }}.apk
-          if-no-files-found: error
+          name: monowave-release-artifacts
+          path: dist-apks/
+          retention-days: 7
 
-  release:
+  publish-release:
     name: Publish GitHub Release
-    needs: build
+    needs: build-apks
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
-          path: release-apks
-          merge-multiple: true
+          name: monowave-release-artifacts
+          path: release-assets
 
-      - name: Publish Release
+      - name: Publish Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          files: release-apks/*.apk
+          files: |
+            release-assets/*.apk
+            release-assets/SHA256SUMS.txt
           generate_release_notes: true
+          body: |
+            ## Monowave ${{ github.ref_name }}
+
+            Production release of Monowave with persistent dedicated signing, on-device recommendations, native NewPipe stream extraction, and zero tracking.
+
+            ### Which file should I download?
+            - **`monowave-universal.apk` (Recommended)**: Works on all modern Android devices (ARM64, ARMv7, x86_64). Choose this if you are unsure.
+            - **`monowave-arm64-v8a.apk`**: Optimized smaller build for modern 64-bit phones and tablets.
+            - **`monowave-armeabi-v7a.apk`**: Smaller build for older 32-bit ARM phones.
+            - **`monowave-x86_64.apk`**: For Android emulators and Intel/AMD Chromebooks.
+
+            ### Verification (SHA-256)
+            Download `SHA256SUMS.txt` alongside your APK and verify on your terminal:
+            ```bash
+            sha256sum -c SHA256SUMS.txt
+            ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

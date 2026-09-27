@@ -3,6 +3,8 @@ import type { SearchItem, Track } from "../../../src/music";
 describe("Search Result Navigation & Tap Interactions", () => {
   const sampleTrack: Track = {
     id: "youtube:12345",
+    provider: "youtube",
+    sourceId: "12345",
     title: "Midnight City",
     artist: "M83",
     cover: "https://lh3.googleusercontent.com/test.jpg",

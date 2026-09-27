@@ -47,9 +47,28 @@ export class LibraryRepository {
     });
   }
 
+  async flush(): Promise<void> {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = null;
+    }
+    if (this.inMemoryCache) {
+      try {
+        const envelope = createPersistedEnvelope(this.inMemoryCache);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.LIBRARY,
+          JSON.stringify(envelope),
+        );
+      } catch {
+        /* Ignore disk write error during flush */
+      }
+    }
+  }
+
   async clear(): Promise<void> {
     if (this.saveDebounceTimer) {
       clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = null;
     }
     this.inMemoryCache = { ...INITIAL_LIBRARY_DATA };
     this.notify(this.inMemoryCache);

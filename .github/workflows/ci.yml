@@ -1,4 +1,4 @@
-name: CI
+name: CI Quality Gates
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  js-quality:
-    name: JS Quality
+  code-quality:
+    name: Code Quality & Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,12 +20,32 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: ESLint Check
+        run: npm run lint
+
+      - name: Prettier Formatting Check
+        run: npm run format:check
+
+      - name: Jest Unit Tests with Coverage
+        run: npx jest --coverage --ci --runInBand
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-coverage-report
+          path: coverage/
+          retention-days: 7
 
   expo-integrity:
-    name: Expo Integrity
+    name: Expo & Autolinking Integrity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,12 +53,21 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci
-      - run: npm run doctor
-      - run: npm run check:native:verify
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Expo Doctor Validation
+        run: npm run doctor
+
+      - name: Expo Dependency Verification
+        run: npm run check:dependencies
+
+      - name: Native Module Autolinking Verification
+        run: npm run check:native:verify
 
   android-build:
-    name: Android Clean Build
+    name: Android Clean Prebuild & Debug Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,11 +75,21 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+
       - uses: actions/setup-java@v4
         with:
           distribution: "zulu"
           java-version: "17"
-      - run: npm ci
-      - run: npm run prebuild:android
-      - name: Build Android
-        run: cd android && ./gradlew assembleDebug
+          cache: "gradle"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Clean Android Prebuild
+        run: npm run prebuild:android
+
+      - name: Build Android Debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon

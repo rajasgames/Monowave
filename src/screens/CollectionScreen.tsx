@@ -117,9 +117,12 @@ export function CollectionScreen({
           track={
             child.track ?? {
               id: child.id,
+              provider: "youtube",
+              sourceId: child.id,
               title: child.title,
               artist: child.subtitle,
               cover: child.cover,
+              artwork: child.cover,
             }
           }
           onPress={() =>
